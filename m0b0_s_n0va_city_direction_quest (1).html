@@ -1,0 +1,2885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>M0B0's N0VA City Direction Quest — Year 3 Speaking Game</title>
+  <!-- Tailwind CSS for responsive widescreen laptop layout -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for synthesized game sound effects (no external audio URLs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <!-- Google Fonts: Fredoka for playful kid-friendly headings & Inter for crisp UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    h1, h2, h3, .font-display {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Smooth map world rotation & zoom for M0B0 Point of View */
+    #mapZoomGroup {
+      transform-origin: 0 0;
+      transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    #mapZoomGroup.is-dragging {
+      transition: none;
+    }
+    #mapWorldGroup {
+      transform-origin: 500px 310px;
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #mapWorldGroup.is-animating {
+      transition: none;
+    }
+    .upright-label, #m0b0BodyGroup {
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* M0B0 Hovering & Thruster Flame Animations */
+    @keyframes hoverFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+    .animate-float {
+      animation: hoverFloat 2.4s ease-in-out infinite;
+    }
+
+    @keyframes thrusterFlicker {
+      0%, 100% { opacity: 0.9; transform: scaleY(1); }
+      50% { opacity: 0.6; transform: scaleY(0.78); }
+    }
+    .thruster-flame {
+      transform-origin: center top;
+      animation: thrusterFlicker 0.25s infinite;
+    }
+
+    /* Confused wobble & Happy bounce for M0B0 character card */
+    @keyframes shakeWobble {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(-7deg); }
+      40% { transform: rotate(7deg); }
+      60% { transform: rotate(-5deg); }
+      80% { transform: rotate(5deg); }
+    }
+    .animate-shake {
+      animation: shakeWobble 0.5s ease-in-out;
+    }
+
+    @keyframes happyJump {
+      0%, 100% { transform: translateY(0) scale(1); }
+      40% { transform: translateY(-10px) scale(1.06); }
+      70% { transform: translateY(-3px) scale(1.02); }
+    }
+    .animate-happy {
+      animation: happyJump 0.55s ease-out;
+    }
+
+    /* Dashed path flow animation on the city map */
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -24; }
+    }
+    .route-dash {
+      animation: dashFlow 0.9s linear infinite;
+    }
+
+    /* Prominent forward arrow pulse so pupils easily see M0B0's facing direction */
+    @keyframes arrowPulse {
+      0%, 100% { transform: translateX(0px) scale(1); }
+      50% { transform: translateX(5px) scale(1.08); }
+    }
+    .facing-arrow-pulse {
+      animation: arrowPulse 1.1s ease-in-out infinite;
+    }
+
+    /* Custom tactile 3D game buttons */
+    .game-btn {
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.2s ease;
+    }
+    .game-btn:active:not(:disabled) {
+      transform: translateY(3px);
+    }
+
+    /* Microphone listening pulse ring */
+    @keyframes micPulse {
+      0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+      70% { box-shadow: 0 0 0 14px rgba(6, 182, 212, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+    }
+    .mic-listening {
+      animation: micPulse 1.3s infinite;
+    }
+
+    /* Soundwave equalizer bars */
+    @keyframes eqBounce {
+      0%, 100% { height: 6px; }
+      50% { height: 18px; }
+    }
+    .eq-bar {
+      animation: eqBounce 0.6s ease-in-out infinite;
+    }
+    .eq-bar:nth-child(2) { animation-delay: 0.15s; }
+    .eq-bar:nth-child(3) { animation-delay: 0.3s; }
+    .eq-bar:nth-child(4) { animation-delay: 0.1s; }
+    .eq-bar:nth-child(5) { animation-delay: 0.25s; }
+
+    /* Golden star pop-out celebration animations */
+    @keyframes goldStarPopOut {
+      0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+      65% { transform: scale(1.32) rotate(10deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .star-pop-out {
+      animation: goldStarPopOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    }
+
+    @keyframes floatingBurstStar {
+      0% { transform: translate(-50%, -50%) scale(0.2) rotate(0deg); opacity: 0; }
+      25% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.35) rotate(var(--rot)); opacity: 0; }
+    }
+    .burst-gold-star {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      pointer-events: none;
+      animation: floatingBurstStar 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="h-screen h-dvh w-screen overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 flex flex-col text-slate-800">
+
+  <!-- ==================== COMPACT TOP HEADER BAR ==================== -->
+  <header class="shrink-0 bg-slate-900/95 border-b border-cyan-500/30 px-3 lg:px-5 py-1.5 lg:py-2 flex items-center justify-between gap-2 z-20">
+    <!-- Left: Comm-Link Brand & Title -->
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-8 h-8 lg:w-9 lg:h-9 rounded-lg bg-gradient-to-br from-blue-900 via-sky-600 to-orange-500 p-0.5 shadow shrink-0">
+        <div class="w-full h-full bg-slate-950 rounded-[6px] flex items-center justify-center">
+          <svg viewBox="0 0 40 40" class="w-5 h-5 lg:w-6 lg:h-6">
+            <circle cx="15" cy="20" r="3.5" fill="#f97316" />
+            <line x1="15" y1="20" x2="7" y2="11" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
+            <line x1="15" y1="20" x2="5" y2="20" stroke="#f97316" stroke-width="2.2" stroke-linecap="round" />
+            <line x1="15" y1="20" x2="7" y2="29" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
+            <circle cx="7" cy="11" r="2" fill="#38bdf8" />
+            <circle cx="5" cy="20" r="2" fill="#f97316" />
+            <circle cx="7" cy="29" r="2" fill="#38bdf8" />
+            <path d="M18 11 L29 11 L34 20 L29 29 L18 29" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linejoin="round" />
+            <path d="M21 15 L26 20 L21 25" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+      <div class="truncate">
+        <div class="flex items-center gap-2">
+          <h1 class="font-display font-bold text-white text-sm lg:text-base tracking-wide truncate">
+            M0B0's N0VA City Direction Quest
+          </h1>
+          <span class="hidden md:inline-block px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-[10px] font-extrabold uppercase tracking-wider">
+            Year 3 Speaking
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Mission Selector, Next Stage, Helper Wings Toggle & Star Score -->
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Live 6-Mission Golden Box Tracker -->
+      <div
+        id="headerMissionBoxes"
+        class="hidden xl:flex items-center gap-1 bg-slate-950/70 px-2 py-1 rounded-xl border border-slate-700/80"
+        title="Finish each mission to earn a star and turn its box golden!"
+      >
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <button
+        onclick="openMissionModal()"
+        class="game-btn px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 text-xs font-bold flex items-center gap-1.5"
+      >
+        <span>🗺️</span>
+        <span>Missions</span>
+      </button>
+
+      <button
+        id="headerNextStageBtn"
+        onclick="goToNextMission()"
+        title="Skip or advance to the next stage"
+        class="game-btn px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/50 text-xs font-bold flex items-center gap-1 shadow"
+      >
+        <span>Next Stage</span>
+        <span>➡️</span>
+      </button>
+
+      <button
+        id="wingsToggleBtn"
+        onclick="toggleHelperWings()"
+        title="Show or hide Left/Right helper arrows on M0B0"
+        class="game-btn px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-lg bg-indigo-950/90 hover:bg-indigo-900 text-indigo-200 border border-indigo-400/40 text-xs font-bold flex items-center gap-1.5"
+      >
+        <span>🧭</span>
+        <span class="hidden sm:inline">L/R Wings:</span>
+        <span id="wingsStatusText" class="text-emerald-400">ON</span>
+      </button>
+
+      <div class="px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center gap-1.5 text-amber-300 font-display font-bold text-xs lg:text-sm">
+        <span>⭐</span>
+        <span id="starCountDisplay">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== LAPTOP LANDSCAPE WIDESCREEN WORKSPACE ==================== -->
+  <main class="flex-1 min-h-0 w-full max-w-[1600px] mx-auto p-2 lg:p-3 grid grid-cols-12 gap-2.5 lg:gap-3.5 overflow-hidden">
+
+    <!-- ==================== LEFT PANEL (7/8 COLS): N0VA CITY MAP ==================== -->
+    <section class="col-span-7 xl:col-span-8 flex flex-col min-h-0 h-full bg-slate-800/95 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden">
+      <!-- Map Header & Zoom/Rotation Controls -->
+      <div class="shrink-0 px-2.5 lg:px-3.5 py-1.5 lg:py-2 bg-slate-900/95 border-b border-slate-700 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="missionBadge" class="px-2 py-0.5 rounded-md bg-orange-500 text-white text-[11px] font-extrabold uppercase tracking-wide shrink-0">
+            STAGE 1/6
+          </span>
+          <span class="text-white font-display font-semibold text-xs lg:text-base truncate">
+            Goal: <strong id="mapTargetLabel" class="text-amber-300">Clinic</strong>
+          </span>
+        </div>
+
+        <!-- Map Zoom, Rotation & M0B0 Point-of-View Toolbar -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <!-- Auto M0B0 Point-of-View Toggle -->
+          <button
+            id="povToggleBtn"
+            onclick="toggleM0B0Pov()"
+            title="Auto-rotate map so M0B0 always faces UP (M0B0's Point of View)"
+            class="px-2 py-1 rounded-lg text-[11px] font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 transition flex items-center gap-1"
+          >
+            <span>🧭</span>
+            <span>M0B0 POV: <strong id="povStatusText">OFF</strong></span>
+          </button>
+
+          <!-- Zoom Controls: Zoom Out (-), Level Pill, Zoom In (+) -->
+          <div class="flex items-center bg-white/10 rounded-lg border border-white/15 overflow-hidden">
+            <button
+              id="zoomOutBtn"
+              onclick="changeMapZoom(-0.25)"
+              title="Zoom out"
+              class="w-6 lg:w-7 h-7 hover:bg-white/20 text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40"
+            >
+              −
+            </button>
+            <button
+              id="zoomLevelBtn"
+              onclick="resetMapZoom()"
+              title="Reset zoom to 100%"
+              class="px-1.5 lg:px-2 h-7 hover:bg-white/20 text-cyan-200 font-mono text-[10px] font-bold flex items-center justify-center transition"
+            >
+              100%
+            </button>
+            <button
+              id="zoomInBtn"
+              onclick="changeMapZoom(0.25)"
+              title="Zoom in closer to M0B0"
+              class="w-6 lg:w-7 h-7 hover:bg-white/20 text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+
+          <!-- Rotation Controls: Rotate Left, Angle Pill, Rotate Right -->
+          <div class="flex items-center bg-white/10 rounded-lg border border-white/15 overflow-hidden">
+            <button
+              onclick="rotateMapBy(-90)"
+              title="Rotate map left 90°"
+              class="w-6 lg:w-7 h-7 hover:bg-white/20 text-white font-bold text-sm flex items-center justify-center transition"
+            >
+              ↺
+            </button>
+            <button
+              id="mapAngleBtn"
+              onclick="resetMapRotation()"
+              title="Reset map rotation to 0°"
+              class="px-1.5 lg:px-2 h-7 hover:bg-white/20 text-amber-300 font-mono text-[10px] font-bold flex items-center justify-center transition"
+            >
+              0°
+            </button>
+            <button
+              onclick="rotateMapBy(90)"
+              title="Rotate map right 90°"
+              class="w-6 lg:w-7 h-7 hover:bg-white/20 text-white font-bold text-sm flex items-center justify-center transition"
+            >
+              ↻
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Responsive SVG N0VA City Viewport -->
+      <div id="mapViewportContainer" class="flex-1 min-h-0 relative w-full bg-[#8ec670] flex items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing">
+        <svg id="novaCitySvg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" class="w-full h-full block">
+          <defs>
+            <!-- Warm Golden Horizon Sky & Rolling Hills Gradient -->
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fde68a" />
+              <stop offset="55%" stop-color="#fef3c7" />
+              <stop offset="100%" stop-color="#dbeafe" />
+            </linearGradient>
+            <linearGradient id="grassGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#a3d684" />
+              <stop offset="55%" stop-color="#8ec670" />
+              <stop offset="100%" stop-color="#79b55c" />
+            </linearGradient>
+            <linearGradient id="parkGrass" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#34d399" stop-opacity="0.32" />
+              <stop offset="100%" stop-color="#0f766e" stop-opacity="0.48" />
+            </linearGradient>
+            <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+              <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.24" />
+            </filter>
+            <filter id="glowCyan" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Zoom & Focus Viewport Group -->
+          <g id="mapZoomGroup">
+            <!-- Rotatable Map World Group (Rotates around center 500, 310) -->
+            <g id="mapWorldGroup">
+              <!-- Oversized Grass Backdrop so rotated/zoomed corners never expose blank edges -->
+              <rect x="-600" y="-600" width="2200" height="1820" fill="url(#grassGrad)" />
+
+              <!-- Distant Horizon & City Skyline -->
+              <rect x="-400" y="-220" width="1800" height="305" fill="url(#skyGrad)" />
+              <g fill="#94a3b8" opacity="0.42">
+                <rect x="355" y="34" width="15" height="44" rx="2" />
+                <rect x="374" y="20" width="19" height="58" rx="2" />
+                <rect x="397" y="29" width="14" height="49" rx="2" />
+                <rect x="416" y="14" width="21" height="64" rx="2" />
+                <rect x="441" y="24" width="17" height="54" rx="2" />
+                <rect x="462" y="18" width="19" height="60" rx="2" />
+                <rect x="485" y="30" width="15" height="48" rx="2" />
+                <rect x="504" y="24" width="17" height="54" rx="2" />
+              </g>
+              <!-- Layered Rolling Green Hills -->
+              <path d="M-400,74 Q140,38 330,68 T680,64 T1400,72 L1400,900 L-400,900 Z" fill="#82bc66" opacity="0.65" />
+              <path d="M-400,88 Q250,62 500,84 T1400,78 L1400,900 L-400,900 Z" fill="url(#grassGrad)" />
+
+              <!-- Pine Forests on Left & Right Hillsides -->
+              <g fill="#4b8356" opacity="0.88">
+                <polygon points="22,95 36,62 50,95" />
+                <polygon points="44,104 60,66 76,104" />
+                <polygon points="14,125 30,88 46,125" />
+                <polygon points="942,102 958,64 974,102" />
+                <polygon points="964,116 980,78 996,116" />
+                <polygon points="245,606 260,572 275,606" />
+                <polygon points="272,612 288,575 304,612" />
+                <polygon points="300,608 315,574 330,608" />
+                <polygon points="885,608 902,570 919,608" />
+                <polygon points="916,612 934,572 952,612" />
+              </g>
+
+              <!-- ==================== N0VA CITY ROAD NETWORK ==================== -->
+              <!-- Outer Sidewalks / Curbs -->
+              <g stroke="#cbd5e1" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M 95,290 L 845,290" />
+                <path d="M 475,290 Q 475,245 462,215 Q 450,185 485,145" />
+                <path d="M 95,290 Q 62,385 95,465 Q 120,520 185,520" />
+                <path d="M 118,495 Q 145,550 135,612" />
+                <path d="M 315,290 L 315,520" />
+                <path d="M 185,520 L 695,520" />
+                <path d="M 695,290 L 695,520" />
+                <path d="M 695,375 L 730,375" />
+              </g>
+
+              <!-- Asphalt Road Surface -->
+              <g stroke="#334155" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M 95,290 L 845,290" />
+                <path d="M 475,290 Q 475,245 462,215 Q 450,185 485,145" />
+                <path d="M 95,290 Q 62,385 95,465 Q 120,520 185,520" />
+                <path d="M 118,495 Q 145,550 135,612" />
+                <path d="M 315,290 L 315,520" />
+                <path d="M 185,520 L 695,520" />
+                <path d="M 695,290 L 695,520" />
+                <path d="M 695,375 L 730,375" />
+              </g>
+
+              <!-- Dashed Center Road Markings -->
+              <g stroke="#f8fafc" stroke-width="2.2" stroke-dasharray="9 9" stroke-linecap="round" fill="none" opacity="0.78">
+                <path d="M 95,290 L 845,290" />
+                <path d="M 475,290 Q 475,245 462,215 Q 450,185 485,145" />
+                <path d="M 95,290 Q 62,385 95,465 Q 120,520 185,520" />
+                <path d="M 315,290 L 315,520" />
+                <path d="M 185,520 L 695,520" />
+                <path d="M 695,290 L 695,520" />
+              </g>
+
+              <!-- Cute Yellow N0VA Shuttle Vans on the Roads -->
+              <g transform="translate(595, 272)">
+                <rect x="-15" y="-8" width="30" height="16" rx="4" fill="#fde68a" stroke="#475569" stroke-width="1.5" />
+                <rect x="-10" y="-5" width="8" height="6" rx="1" fill="#7dd3fc" />
+                <rect x="1" y="-5" width="8" height="6" rx="1" fill="#7dd3fc" />
+                <circle cx="-8" cy="8" r="3" fill="#1e293b" />
+                <circle cx="8" cy="8" r="3" fill="#1e293b" />
+              </g>
+              <g transform="translate(515, 504)">
+                <rect x="-15" y="-8" width="30" height="16" rx="4" fill="#fde68a" stroke="#475569" stroke-width="1.5" />
+                <rect x="-10" y="-5" width="8" height="6" rx="1" fill="#7dd3fc" />
+                <rect x="1" y="-5" width="8" height="6" rx="1" fill="#7dd3fc" />
+                <circle cx="-8" cy="8" r="3" fill="#1e293b" />
+                <circle cx="8" cy="8" r="3" fill="#1e293b" />
+              </g>
+
+              <!-- ==================== N0VA CITY LANDMARKS ==================== -->
+
+              <!-- 1. N0VA SCHOOL (Top-Left) -->
+              <g transform="translate(105, 52)" filter="url(#softShadow)">
+                <rect x="18" y="68" width="185" height="110" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="2.5" />
+                <path d="M 195,95 L 275,95 Q 295,95 295,120 L 295,165 L 195,165 Z" fill="#e2e8f0" stroke="#64748b" stroke-width="2.2" />
+                <path d="M 195,95 Q 285,95 293,115 L 195,115 Z" fill="#2dd4bf" stroke="#0f766e" stroke-width="2" />
+                <rect x="78" y="34" width="84" height="144" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="2.5" />
+                <path d="M 78,36 A 42,36 0 0,1 162,36 Z" fill="#2dd4bf" stroke="#0f766e" stroke-width="2.5" />
+                <path d="M 28,68 A 24,20 0 0,1 76,68 Z" fill="#2dd4bf" stroke="#0f766e" stroke-width="2" />
+                <circle cx="120" cy="64" r="17" fill="#fef3c7" stroke="#b45309" stroke-width="2.5" />
+                <line x1="120" y1="64" x2="120" y2="53" stroke="#78350f" stroke-width="2" stroke-linecap="round" />
+                <line x1="120" y1="64" x2="128" y2="64" stroke="#78350f" stroke-width="2" stroke-linecap="round" />
+                <circle cx="120" cy="100" r="11" fill="#bae6fd" stroke="#0284c7" stroke-width="2" />
+                <path d="M 103,178 L 103,136 A 17,17 0 0,1 137,136 L 137,178 Z" fill="#334155" />
+                <rect x="42" y="92" width="18" height="32" rx="5" fill="#7dd3fc" stroke="#0284c7" stroke-width="1.5" />
+                <rect x="172" y="92" width="18" height="32" rx="5" fill="#7dd3fc" stroke="#0284c7" stroke-width="1.5" />
+                <g class="upright-label" data-cx="145" data-cy="192">
+                  <rect x="78" y="181" width="134" height="22" rx="11" fill="#0f766e" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="145" y="196" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800">N0VA SCHOOL</text>
+                </g>
+              </g>
+
+              <!-- 2. STAR BAKERY (Top-Center) -->
+              <g transform="translate(505, 52)" filter="url(#softShadow)">
+                <rect x="15" y="34" width="135" height="105" rx="16" fill="#fde68a" stroke="#b45309" stroke-width="2.5" />
+                <ellipse cx="55" cy="30" rx="22" ry="10" fill="#5eead4" stroke="#0f766e" stroke-width="2" />
+                <ellipse cx="110" cy="28" rx="28" ry="12" fill="#5eead4" stroke="#0f766e" stroke-width="2" />
+                <circle cx="92" cy="62" r="16" fill="#f59e0b" stroke="#78350f" stroke-width="2" />
+                <text x="92" y="68" text-anchor="middle" font-size="15">🥐</text>
+                <rect x="26" y="76" width="38" height="38" rx="6" fill="#fef3c7" stroke="#b45309" stroke-width="1.8" />
+                <path d="M 70,96 L 130,96 L 138,110 L 62,110 Z" fill="#facc15" stroke="#b45309" stroke-width="1.8" />
+                <path d="M 78,139 L 78,110 L 122,110 L 122,139 Z" fill="#78350f" />
+                <g class="upright-label" data-cx="82" data-cy="152">
+                  <rect x="25" y="141" width="114" height="22" rx="11" fill="#b45309" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="82" y="156" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800">STAR BAKERY</text>
+                </g>
+              </g>
+
+              <!-- 3. MARKET / MEGA-MART (Top-Right, next to the Bakery) -->
+              <g transform="translate(700, 48)" filter="url(#softShadow)">
+                <rect x="8" y="88" width="52" height="100" rx="6" fill="#2a9d8f" stroke="#1e293b" stroke-width="2" />
+                <rect x="186" y="88" width="52" height="100" rx="6" fill="#e76f51" stroke="#1e293b" stroke-width="2" />
+                <rect x="56" y="64" width="134" height="124" rx="8" fill="#bae6fd" stroke="#1e293b" stroke-width="2.5" />
+                <path d="M 24,88 A 32,26 0 0,1 88,88 Z" fill="#5eead4" stroke="#0f766e" stroke-width="2" />
+                <path d="M 72,64 A 52,44 0 0,1 176,64 Z" fill="#7dd3fc" stroke="#0369a1" stroke-width="2.5" />
+                <rect x="188" y="54" width="42" height="24" rx="3" fill="#1d4ed8" stroke="#93c5fd" stroke-width="1.5" />
+                <path d="M 190,104 C 245,104 245,134 190,134 C 245,134 245,164 190,164" fill="none" stroke="#94a3b8" stroke-width="11" stroke-linecap="round" />
+                <path d="M 190,104 C 245,104 245,134 190,134 C 245,134 245,164 190,164" fill="none" stroke="#38bdf8" stroke-width="4" stroke-dasharray="6 6" />
+                <rect x="64" y="76" width="118" height="22" rx="5" fill="#1e293b" stroke="#facc15" stroke-width="2" />
+                <text x="123" y="91" text-anchor="middle" fill="#facc15" font-size="11" font-weight="800">MEGA-MART</text>
+                <rect x="12" y="120" width="44" height="11" rx="2" fill="#f59e0b" />
+                <rect x="190" y="120" width="44" height="11" rx="2" fill="#ec4899" />
+                <path d="M 98,188 L 98,148 A 25,25 0 0,1 148,148 L 148,188 Z" fill="#f97316" stroke="#1e293b" stroke-width="2" />
+                <path d="M 105,188 L 105,152 A 18,18 0 0,1 141,152 L 141,188 Z" fill="#e0f2fe" />
+                <g class="upright-label" data-cx="123" data-cy="202">
+                  <rect x="53" y="191" width="140" height="23" rx="11.5" fill="#1d4ed8" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="123" y="206" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800">MARKET</text>
+                </g>
+              </g>
+
+              <!-- 4. CLINIC (Middle-Left) -->
+              <g transform="translate(105, 315)" filter="url(#softShadow)">
+                <rect x="16" y="28" width="142" height="115" rx="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.5" />
+                <rect x="42" y="8" width="90" height="34" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="2" />
+                <ellipse cx="87" cy="24" rx="28" ry="11" fill="#94a3b8" stroke="#475569" stroke-width="1.5" />
+                <text x="87" y="28" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="900">H</text>
+                <circle cx="126" cy="64" r="18" fill="#bae6fd" stroke="#0284c7" stroke-width="2" />
+                <rect x="122" y="53" width="8" height="22" rx="2" fill="#0ea5e9" />
+                <rect x="115" y="60" width="22" height="8" rx="2" fill="#0ea5e9" />
+                <path d="M 65,143 L 65,108 A 22,22 0 0,1 109,108 L 109,143 Z" fill="#0369a1" />
+                <g class="upright-label" data-cx="87" data-cy="156">
+                  <rect x="37" y="145" width="100" height="22" rx="11" fill="#0284c7" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="87" y="160" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800">CLINIC</text>
+                </g>
+              </g>
+
+              <!-- 5. BUS STOP (At the T-Junction 315, 520 — M0B0 Always Starts Here!) -->
+              <g transform="translate(201, 488)" filter="url(#softShadow)">
+                <rect x="72" y="16" width="84" height="36" rx="10" fill="#fef3c7" stroke="#78350f" stroke-width="2" />
+                <path d="M 66,18 Q 114,0 162,18 Z" fill="#0e7490" stroke="#1e293b" stroke-width="2" />
+                <circle cx="114" cy="14" r="8" fill="#22d3ee" stroke="#0f172a" stroke-width="1.5" />
+                <text x="114" y="18" text-anchor="middle" fill="#0f172a" font-size="10" font-weight="900">H</text>
+                <g class="upright-label" data-cx="114" data-cy="65">
+                  <rect x="70" y="54" width="88" height="20" rx="10" fill="#0e7490" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="114" y="68" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="800">BUS STOP</text>
+                </g>
+              </g>
+
+              <!-- 6. WOW LIBRARY (Center-Left) -->
+              <g transform="translate(338, 310)" filter="url(#softShadow)">
+                <rect x="18" y="48" width="136" height="98" rx="12" fill="#b45309" stroke="#451a03" stroke-width="2.5" />
+                <rect x="30" y="58" width="112" height="82" rx="8" fill="#d97706" />
+                <path d="M 46,48 A 40,32 0 0,1 126,48 Z" fill="#67e8f9" stroke="#0e7490" stroke-width="2.2" />
+                <g filter="url(#glowCyan)">
+                  <path d="M 66,12 L 86,18 L 86,34 L 66,28 Z" fill="#cffafe" stroke="#06b6d4" stroke-width="1.6" />
+                  <path d="M 106,12 L 86,18 L 86,34 L 106,28 Z" fill="#cffafe" stroke="#06b6d4" stroke-width="1.6" />
+                </g>
+                <rect x="42" y="76" width="36" height="48" rx="16" fill="#fef08a" stroke="#78350f" stroke-width="2" />
+                <rect x="94" y="80" width="32" height="32" rx="16" fill="#fef08a" stroke="#78350f" stroke-width="2" />
+                <rect x="12" y="138" width="148" height="12" rx="4" fill="#fef3c7" stroke="#78350f" stroke-width="2" />
+                <g class="upright-label" data-cx="86" data-cy="162">
+                  <rect x="30" y="151" width="112" height="22" rx="11" fill="#78350f" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="86" y="166" text-anchor="middle" fill="#fef3c7" font-size="11" font-weight="800">WOW LIBRARY</text>
+                </g>
+              </g>
+
+              <!-- 7. TOK ALI'S HOUSE (Spotted Mushroom Cottage, Center-Right, opposite the Park) -->
+              <g transform="translate(518, 328)" filter="url(#softShadow)">
+                <path d="M 34,78 L 122,78 L 132,136 L 24,136 Z" fill="#fef3c7" stroke="#78350f" stroke-width="2.5" />
+                <path d="M 10,82 C 10,20 146,20 146,82 Z" fill="#ea580c" stroke="#7c2d12" stroke-width="2.5" />
+                <circle cx="44" cy="56" r="10" fill="#fed7aa" />
+                <circle cx="80" cy="42" r="12" fill="#fed7aa" />
+                <circle cx="114" cy="58" r="9" fill="#fed7aa" />
+                <path d="M 112,36 L 122,18 L 130,22 L 120,40 Z" fill="#9a3412" stroke="#431407" stroke-width="1.5" />
+                <path d="M 64,136 L 64,102 A 14,14 0 0,1 92,102 L 92,136 Z" fill="#92400e" stroke="#451a03" stroke-width="2" />
+                <circle cx="44" cy="106" r="10" fill="#fde047" stroke="#78350f" stroke-width="2" />
+                <circle cx="112" cy="106" r="10" fill="#fde047" stroke="#78350f" stroke-width="2" />
+                <g class="upright-label" data-cx="78" data-cy="150">
+                  <rect x="16" y="139" width="124" height="22" rx="11" fill="#c2410c" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="78" y="154" text-anchor="middle" fill="#ffffff" font-size="10.5" font-weight="800">TOK ALI'S HOUSE</text>
+                </g>
+              </g>
+
+              <!-- 8. GLOW PARK (Bottom-Right Bioluminescent Park, opposite Tok Ali's house) -->
+              <g transform="translate(722, 315)" filter="url(#softShadow)">
+                <rect x="6" y="10" width="234" height="238" rx="40" fill="url(#parkGrass)" stroke="#0d9488" stroke-width="2.5" />
+                <path d="M 0,65 Q 105,60 135,120 T 205,185" stroke="#f472b6" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.65" />
+                <path d="M 0,65 Q 105,60 135,120 T 205,185" stroke="#fde68a" stroke-width="8" fill="none" stroke-linecap="round" />
+                <path d="M 180,15 Q 170,65 232,95" stroke="#38bdf8" stroke-width="15" fill="none" stroke-linecap="round" />
+                <rect x="172" y="46" width="30" height="15" rx="3" transform="rotate(-25 172 46)" fill="#b45309" stroke="#451a03" stroke-width="1.5" />
+                <circle cx="48" cy="48" r="24" fill="#1e3a8a" stroke="#38bdf8" stroke-width="2" />
+                <circle cx="42" cy="42" r="3" fill="#67e8f9" /><circle cx="55" cy="52" r="2.5" fill="#f472b6" />
+                <circle cx="130" cy="44" r="22" fill="#0f766e" stroke="#5eead4" stroke-width="2" />
+                <circle cx="204" cy="148" r="25" fill="#1e3a8a" stroke="#38bdf8" stroke-width="2" />
+                <circle cx="38" cy="132" r="22" fill="#1e3a8a" stroke="#38bdf8" stroke-width="2" />
+                <rect x="92" y="96" width="28" height="24" rx="4" fill="#f59e0b" stroke="#78350f" stroke-width="1.5" />
+                <path d="M 120,108 L 146,136 L 136,142 L 114,116 Z" fill="#ec4899" />
+                <line x1="44" y1="176" x2="78" y2="176" stroke="#92400e" stroke-width="3" />
+                <line x1="52" y1="176" x2="52" y2="200" stroke="#475569" stroke-width="1.5" />
+                <line x1="70" y1="176" x2="70" y2="200" stroke="#475569" stroke-width="1.5" />
+                <circle cx="168" cy="186" r="18" fill="#fde68a" stroke="#b45309" stroke-width="2" />
+                <g class="upright-label" data-cx="124" data-cy="232">
+                  <rect x="68" y="221" width="112" height="23" rx="11.5" fill="#0f766e" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="124" y="236" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800">GLOW PARK</text>
+                </g>
+              </g>
+
+              <!-- 9. UTILITY STATION & COZY COTTAGES -->
+              <g transform="translate(520, 558)" opacity="0.92">
+                <rect x="12" y="10" width="54" height="42" rx="6" fill="#cbd5e1" stroke="#475569" stroke-width="2" />
+                <rect x="78" y="14" width="48" height="38" rx="6" fill="#94a3b8" stroke="#475569" stroke-width="2" />
+                <circle cx="38" cy="30" r="12" fill="#0ea5e9" stroke="#0369a1" stroke-width="2" />
+              </g>
+              <g transform="translate(10, 425)">
+                <rect x="4" y="20" width="38" height="30" rx="4" fill="#fde68a" stroke="#78350f" stroke-width="1.8" />
+                <polygon points="0,22 23,4 46,22" fill="#0d9488" stroke="#134e4a" stroke-width="1.8" />
+              </g>
+              <g transform="translate(8, 495)">
+                <rect x="4" y="20" width="42" height="32" rx="4" fill="#fed7aa" stroke="#7c2d12" stroke-width="1.8" />
+                <polygon points="0,22 25,4 50,22" fill="#ea580c" stroke="#7c2d12" stroke-width="1.8" />
+              </g>
+              <g transform="translate(72, 540)">
+                <rect x="4" y="20" width="42" height="34" rx="4" fill="#fef08a" stroke="#854d0e" stroke-width="1.8" />
+                <polygon points="0,22 25,4 50,22" fill="#b45309" stroke="#78350f" stroke-width="1.8" />
+              </g>
+
+              <!-- ==================== DYNAMIC ROUTE TRAIL & DESTINATION PIN ==================== -->
+              <polyline
+                id="completedRouteLine"
+                points=""
+                fill="none"
+                stroke="#06b6d4"
+                stroke-width="9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                opacity="0.9"
+              />
+              <polyline
+                id="nextStepHintLine"
+                points="315,520 315,435"
+                fill="none"
+                stroke="#38bdf8"
+                stroke-width="6"
+                stroke-dasharray="8 8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="route-dash"
+              />
+
+              <!-- Glowing Destination Target Pin -->
+              <g id="destinationPinGroup" transform="translate(192, 390)">
+                <circle cx="0" cy="0" r="24" fill="#f97316" opacity="0.28">
+                  <animate attributeName="r" values="16;32;16" dur="1.6s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.55;0.1;0.55" dur="1.6s" repeatCount="indefinite" />
+                </circle>
+                <path d="M 0,-30 C -12,-30 -20,-21 -20,-10 C -20,4 0,20 0,20 C 0,20 20,4 20,-10 C 20,-21 12,-30 0,-30 Z" fill="#f97316" stroke="#ffffff" stroke-width="2.5" />
+                <circle cx="0" cy="-11" r="6" fill="#ffffff" />
+              </g>
+
+              <!-- Glowing Start Beacon (Always anchored at Junction Bus Stop 315, 520) -->
+              <g id="startBeaconGroup" transform="translate(315, 520)">
+                <circle cx="0" cy="0" r="22" fill="#06b6d4" opacity="0.25">
+                  <animate attributeName="r" values="18;26;18" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <g transform="translate(0, 64)">
+                  <rect x="-56" y="-11" width="112" height="18" rx="9" fill="#0e7490" stroke="#ffffff" stroke-width="1.5" />
+                  <text x="0" y="1" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="900">START: BUS STOP</text>
+                </g>
+              </g>
+
+              <!-- ==================== M0B0 HERO SPRITE ON MAP ==================== -->
+              <g id="m0b0MapSprite" transform="translate(315, 520)">
+                <!-- Directional Orientation Cone + Left/Right Helper Wings (Facing North -90 deg up the road!) -->
+                <g id="m0b0DirectionCone" transform="rotate(-90)">
+                  <!-- Forward Vision Cone -->
+                  <polygon points="0,0 56,-22 56,22" fill="#facc15" opacity="0.28" />
+
+                  <!-- Prominent Animated Forward Arrow -->
+                  <g class="facing-arrow-pulse">
+                    <path d="M 18,-6 L 34,-6 L 34,-13 L 50,0 L 34,13 L 34,6 L 18,6 Z" fill="#facc15" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+                  </g>
+
+                  <!-- Left & Right Spatial Helper Wings -->
+                  <g id="m0b0HelperWings">
+                    <!-- LEFT Wing (-90 deg relative to M0B0's nose) -->
+                    <g transform="translate(0, -28)">
+                      <rect x="-18" y="-9" width="36" height="16" rx="8" fill="#2563eb" stroke="#ffffff" stroke-width="1.5" />
+                      <text x="0" y="2" text-anchor="middle" fill="#ffffff" font-size="8.5" font-weight="900">LEFT</text>
+                    </g>
+                    <!-- RIGHT Wing (+90 deg relative to M0B0's nose) -->
+                    <g transform="translate(0, 28)">
+                      <rect x="-20" y="-7" width="40" height="16" rx="8" fill="#ea580c" stroke="#ffffff" stroke-width="1.5" />
+                      <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="8.5" font-weight="900">RIGHT</text>
+                    </g>
+                  </g>
+                </g>
+
+                <!-- M0B0 Body (Counter-rotates when map rotates so M0B0 stays upright) -->
+                <g id="m0b0BodyGroup">
+                  <g class="animate-float">
+                    <!-- Hover Shadow -->
+                    <ellipse cx="0" cy="21" rx="14" ry="5" fill="#0f172a" opacity="0.3" />
+                    <!-- Thruster Flame -->
+                    <polygon points="-5,14 5,14 0,24" fill="#fb923c" class="thruster-flame" />
+                    <!-- Antenna -->
+                    <line x1="0" y1="-18" x2="0" y2="-25" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+                    <circle cx="0" cy="-27" r="3.5" fill="#f97316" />
+                    <!-- White/Indigo Rounded Body -->
+                    <rect x="-16" y="-17" width="32" height="29" rx="11" fill="#f8fafc" stroke="#312e81" stroke-width="2.5" />
+                    <!-- Side Ear Pods -->
+                    <rect x="-20" y="-8" width="4" height="12" rx="2" fill="#f97316" />
+                    <rect x="16" y="-8" width="4" height="12" rx="2" fill="#f97316" />
+                    <!-- Glowing Visor -->
+                    <rect x="-12" y="-12" width="24" height="15" rx="6" fill="#0f172a" />
+                    <!-- Happy Cyan Eyes -->
+                    <circle cx="-5" cy="-5" r="3" fill="#22d3ee" />
+                    <circle cx="5" cy="-5" r="3" fill="#22d3ee" />
+                    <path d="M -3,0 Q 0,3 3,0" fill="none" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round" />
+                  </g>
+                </g>
+              </g>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ==================== RIGHT PANEL (5/4 COLS): COMM-LINK & SPEAKING CONSOLE ==================== -->
+    <section class="col-span-5 xl:col-span-4 flex flex-col gap-2 min-h-0 h-full overflow-hidden">
+
+      <!-- 1. Compact M0B0 Comm-Link Card -->
+      <div class="shrink-0 bg-white rounded-2xl p-2 lg:p-2.5 shadow-lg border border-slate-200 flex items-center gap-2.5">
+        <!-- Animated M0B0 Expression Portrait -->
+        <div id="m0b0PortraitContainer" class="w-12 h-12 lg:w-14 lg:h-14 shrink-0 bg-gradient-to-b from-sky-100 to-indigo-100 rounded-xl border-2 border-indigo-200 flex items-center justify-center relative overflow-hidden">
+          <svg id="m0b0PortraitSvg" viewBox="0 0 120 120" class="w-10 h-10 lg:w-12 lg:h-12">
+            <g class="animate-float">
+              <ellipse cx="60" cy="108" rx="26" ry="6" fill="#94a3b8" opacity="0.35" />
+              <path d="M 48,88 L 72,88 L 60,104 Z" fill="#f97316" class="thruster-flame" />
+              <line x1="60" y1="22" x2="60" y2="10" stroke="#0284c7" stroke-width="4" stroke-linecap="round" />
+              <circle cx="60" cy="9" r="6" fill="#f97316" />
+              <rect x="26" y="22" width="68" height="64" rx="24" fill="#ffffff" stroke="#312e81" stroke-width="4" />
+              <rect x="18" y="42" width="8" height="24" rx="4" fill="#f97316" stroke="#312e81" stroke-width="2.5" />
+              <rect x="94" y="42" width="8" height="24" rx="4" fill="#f97316" stroke="#312e81" stroke-width="2.5" />
+              <rect x="34" y="34" width="52" height="34" rx="14" fill="#0f172a" />
+              <g id="faceHappy">
+                <circle cx="48" cy="49" r="6" fill="#22d3ee" />
+                <circle cx="72" cy="49" r="6" fill="#22d3ee" />
+                <circle cx="46" cy="47" r="2" fill="#ffffff" />
+                <circle cx="70" cy="47" r="2" fill="#ffffff" />
+                <path d="M 53,58 Q 60,64 67,58" fill="none" stroke="#22d3ee" stroke-width="3" stroke-linecap="round" />
+              </g>
+              <g id="faceConfused" class="hidden">
+                <circle cx="48" cy="49" r="7" fill="#fbbf24" />
+                <circle cx="72" cy="49" r="4.5" fill="#fbbf24" />
+                <path d="M 52,60 Q 56,56 60,60 Q 64,64 68,60" fill="none" stroke="#fbbf24" stroke-width="2.8" stroke-linecap="round" />
+                <text x="86" y="30" fill="#f97316" font-size="18" font-weight="900">?</text>
+              </g>
+              <g id="faceCelebrate" class="hidden">
+                <path d="M 42,51 Q 48,43 54,51" fill="none" stroke="#34d399" stroke-width="3.5" stroke-linecap="round" />
+                <path d="M 66,51 Q 72,43 78,51" fill="none" stroke="#34d399" stroke-width="3.5" stroke-linecap="round" />
+                <path d="M 50,56 Q 60,68 70,56 Z" fill="#34d399" />
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <!-- M0B0 Speech Prompt -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1 mb-0.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span id="missionTitle" class="font-display font-bold text-slate-900 text-xs lg:text-sm truncate">
+                Stage 1: Clinic
+              </span>
+              <span id="partGoalChip" class="shrink-0 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">
+                🧰 Part: repair kit
+              </span>
+            </div>
+            <button
+              id="listenPromptBtn"
+              onclick="speakMissionPrompt()"
+              title="Listen to clear female teacher voice"
+              class="shrink-0 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-800 transition flex items-center gap-1"
+            >
+              <span>🔊</span>
+              <span id="listenPromptLabel">Listen</span>
+            </button>
+          </div>
+          <p id="m0b0SpeechText" class="text-slate-700 text-xs leading-snug font-medium line-clamp-2">
+            "I'm at the Bus Stop! I need a repair kit from the Clinic. Fill in the direction line first!"
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Step 1 Card: Fill in the Blank (Sequence Line Template) -->
+      <div class="shrink-0 bg-white rounded-2xl p-2 lg:p-2.5 shadow-lg border border-slate-200">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-indigo-600 text-white font-display font-bold text-xs flex items-center justify-center">1</span>
+            <h2 class="font-display font-bold text-slate-900 text-xs lg:text-sm">Fill in the Sequence Line</h2>
+          </div>
+          <span id="step1Badge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+            Line 1 of 2
+          </span>
+        </div>
+
+        <!-- Sequence Line Fill-in-the-Blank Template Box -->
+        <div id="sequenceTemplateBox" class="mb-1.5 lg:mb-2 px-3 py-1.5 lg:py-2 rounded-xl bg-slate-50 border-2 border-indigo-200 flex items-center justify-center text-center min-h-[38px] lg:min-h-[44px]">
+          <p id="sequenceTemplateText" class="font-display font-bold text-xs lg:text-sm text-slate-800 leading-snug">
+            First, <span class="inline-block px-3 py-0.5 rounded-lg bg-amber-100 text-amber-800 border-b-2 border-dashed border-amber-500">____________</span>.
+          </p>
+        </div>
+
+        <!-- 3 Direction / Location Phrase Choice Buttons -->
+        <div class="grid grid-cols-3 gap-1.5">
+          <button
+            id="choice-btn-0"
+            onclick="handleBlankChoice(0)"
+            class="game-btn py-2 px-1.5 rounded-xl border-2 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 font-display font-bold text-[11px] lg:text-xs leading-tight text-center shadow-sm"
+          >
+            go straight
+          </button>
+          <button
+            id="choice-btn-1"
+            onclick="handleBlankChoice(1)"
+            class="game-btn py-2 px-1.5 rounded-xl border-2 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 font-display font-bold text-[11px] lg:text-xs leading-tight text-center shadow-sm"
+          >
+            turn left
+          </button>
+          <button
+            id="choice-btn-2"
+            onclick="handleBlankChoice(2)"
+            class="game-btn py-2 px-1.5 rounded-xl border-2 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 font-display font-bold text-[11px] lg:text-xs leading-tight text-center shadow-sm"
+          >
+            turn right
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Step 2 Card: Model Voice First + Single Voice Button with Sound Threshold -->
+      <div id="voiceStepCard" class="shrink-0 bg-white rounded-2xl p-2 lg:p-2.5 shadow-lg border-2 border-slate-200 transition-all duration-300">
+        <div class="flex items-center justify-between gap-1 mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-cyan-600 text-white font-display font-bold text-xs flex items-center justify-center">2</span>
+            <h2 class="font-display font-bold text-slate-900 text-xs lg:text-sm">Listen &amp; Speak Full Sentence</h2>
+          </div>
+          <span id="voicePhaseBadge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            🔒 Fill blank first
+          </span>
+        </div>
+
+        <!-- Action Row: Listen Again Voice Button + Speak Microphone Button -->
+        <div class="flex items-stretch gap-1.5">
+          <button
+            id="replayModelVoiceBtn"
+            type="button"
+            onclick="replayCurrentStepSentence()"
+            disabled
+            title="Listen to the model sentence again"
+            class="game-btn shrink-0 py-2 px-2.5 lg:px-3 rounded-xl bg-sky-100 hover:bg-sky-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-sky-900 border border-sky-300 disabled:border-slate-200 font-display font-bold text-xs lg:text-sm flex items-center justify-center gap-1.5 transition"
+          >
+            <span>🔊</span>
+            <span id="replayVoiceBtnLabel">Listen</span>
+          </button>
+
+          <!-- Voice Speaking Button (Unlocked after model voice finishes speaking) -->
+          <button
+            id="speakMicBtn"
+            type="button"
+            onclick="startVoiceRecognition()"
+            disabled
+            class="game-btn flex-1 min-w-0 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-slate-300 disabled:to-slate-400 disabled:cursor-not-allowed text-white font-display font-bold text-xs lg:text-sm shadow flex items-center justify-center gap-2 transition"
+          >
+            <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current shrink-0">
+              <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/>
+            </svg>
+            <span id="micBtnLabel" class="truncate">Complete Step 1 First</span>
+          </button>
+        </div>
+
+        <!-- Sound Threshold Meter & Adjustable Threshold Controls -->
+        <div class="mt-1.5 bg-slate-900 text-white rounded-xl p-2 border border-slate-700">
+          <div class="flex items-center justify-between gap-1 text-[10px] mb-1">
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-cyan-300">🎚️ Sound Threshold:</span>
+              <div class="inline-flex items-center bg-slate-800 rounded-md border border-slate-600 overflow-hidden">
+                <button
+                  type="button"
+                  onclick="adjustSoundThreshold(-3)"
+                  title="Lower sound threshold (easier for quiet voices)"
+                  class="px-1.5 py-0.5 hover:bg-slate-700 text-white font-bold"
+                >
+                  −
+                </button>
+                <span id="thresholdValueLabel" class="px-1.5 py-0.5 font-mono font-bold text-emerald-300">65 dBA</span>
+                <button
+                  type="button"
+                  onclick="adjustSoundThreshold(3)"
+                  title="Raise sound threshold (require louder presentation voice)"
+                  class="px-1.5 py-0.5 hover:bg-slate-700 text-white font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <span id="dbaReadoutBadge" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] font-bold text-slate-300">
+              -- dBA
+            </span>
+          </div>
+
+          <!-- Visual Volume Bar with Green Bar Zone After 65 dBA Threshold -->
+          <div class="relative w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+            <div
+              id="greenThresholdZone"
+              class="absolute top-0 bottom-0 right-0 bg-emerald-500/35 border-l-2 border-emerald-400 z-10 pointer-events-none flex items-center justify-end pr-1.5"
+              style="left: 63.6%;"
+            >
+              <span class="text-[8px] font-extrabold uppercase tracking-wider text-emerald-200/90">Target</span>
+            </div>
+            <div id="voiceMeterFill" class="relative z-0 h-full w-0 bg-gradient-to-r from-cyan-400 via-emerald-400 to-emerald-300 transition-all duration-75 rounded-full"></div>
+          </div>
+
+          <!-- Live Equalizer & Transcript -->
+          <div id="speechVisualizerBox" class="hidden mt-1.5 flex items-center gap-1.5">
+            <div class="flex items-center gap-0.5 h-3 shrink-0">
+              <span class="eq-bar w-1 bg-cyan-400 rounded-full"></span>
+              <span class="eq-bar w-1 bg-cyan-300 rounded-full"></span>
+              <span class="eq-bar w-1 bg-amber-400 rounded-full"></span>
+              <span class="eq-bar w-1 bg-cyan-300 rounded-full"></span>
+              <span class="eq-bar w-1 bg-cyan-400 rounded-full"></span>
+            </div>
+            <p id="liveTranscriptText" class="text-[11px] text-cyan-200 font-semibold truncate">
+              Listening...
+            </p>
+          </div>
+        </div>
+
+        <!-- Unified Action Feedback Banner -->
+        <div id="actionFeedbackBanner" class="hidden mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight"></div>
+      </div>
+
+      <!-- 4. Full Direction Log Panel (Bottom of Right Side) -->
+      <div class="flex-1 min-h-0 bg-white rounded-2xl p-2 lg:p-2.5 shadow-lg border border-slate-200 flex flex-col overflow-hidden">
+        <div class="shrink-0 flex items-center justify-between gap-1 mb-1.5 pb-1 border-b border-slate-100">
+          <div class="flex items-center gap-1.5">
+            <span class="text-sm">📜</span>
+            <h3 class="font-display font-bold text-slate-900 text-xs lg:text-sm">Full Direction Log</h3>
+            <span id="logProgressBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              0/2
+            </span>
+          </div>
+          <button
+            id="readAllLogBtn"
+            onclick="readFullSequenceLog()"
+            disabled
+            title="Hear the full direction log read aloud"
+            class="px-2.5 py-0.5 rounded-full bg-emerald-100 hover:bg-emerald-200 disabled:opacity-40 text-emerald-800 text-[11px] font-bold transition flex items-center gap-1"
+          >
+            <span>🔊</span>
+            <span>Read Full Log</span>
+          </button>
+        </div>
+
+        <div id="routeSequenceLogList" class="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-0.5">
+          <div class="h-full flex items-center justify-center text-center text-[11px] text-slate-400 font-medium px-2">
+            Fill in each direction line and speak the full sentence aloud to move M0B0 and record it here!
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ==================== MISSION PICKER MODAL ==================== -->
+  <div id="missionModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border-2 border-cyan-300">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🗺️</span>
+          <h2 class="font-display font-bold text-xl text-slate-900">Select N0VA City Stage</h2>
+        </div>
+        <button
+          onclick="closeMissionModal()"
+          class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center"
+        >
+          ✕
+        </button>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-600 font-semibold mb-4">
+        M0B0 always starts at the <strong>Bus Stop</strong> on the junction. Choose any stage to practice!
+      </p>
+      <div id="missionGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ROBOT PART COLLECTED FLOATING WINDOW (NON-BLOCKING) ==================== -->
+  <div id="celebrationModal" class="hidden fixed top-14 left-3 right-3 md:right-auto md:w-[55%] xl:w-[63%] max-w-2xl z-40 pointer-events-none">
+    <div class="pointer-events-auto bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-2xl border-2 border-amber-400 ring-4 ring-amber-300/25 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2.5 min-w-0 text-center sm:text-left">
+        <div id="celebEmoji" class="w-11 h-11 rounded-xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center text-2xl shrink-0">🧰</div>
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mb-0.5">
+            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider">
+              Robot Part Collected!
+            </span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">
+              ⭐ +1 Star Earned!
+            </span>
+          </div>
+          <h2 id="celebTitle" class="font-display font-bold text-sm sm:text-base text-slate-900 leading-tight truncate">
+            You Found the Repair Kit!
+          </h2>
+          <p id="celebMessage" class="text-slate-600 text-[11px] font-medium leading-snug">
+            M0B0 reached the Clinic safely! Read your Full Direction Log on the right.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-center">
+        <button
+          onclick="readFullSequenceLog()"
+          class="game-btn py-2 px-3 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-900 font-display font-bold text-xs whitespace-nowrap"
+        >
+          🔊 Read Log
+        </button>
+        <button
+          id="nextMissionBtn"
+          onclick="goToNextMission()"
+          class="game-btn py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-display font-bold text-xs shadow whitespace-nowrap"
+        >
+          Next Stage ➡️
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN-WIDE GOLD STAR POP-OUT BURST LAYER ==================== -->
+  <div id="goldStarBurstLayer" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+  <!-- ==================== ALL 6 GOLD STARS GRAND FINALE MODAL ==================== -->
+  <div id="allStarsFinaleModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-amber-50 via-white to-yellow-50 rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl border-4 border-amber-400 ring-8 ring-amber-400/20 text-center relative overflow-hidden">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/25 border border-amber-400 text-amber-900 font-display font-bold text-xs uppercase tracking-wider mb-2">
+        <span>🏆</span>
+        <span>N0VA City Map Master!</span>
+      </div>
+
+      <h2 class="font-display font-bold text-2xl sm:text-3xl text-slate-900 leading-tight mb-1.5">
+        Congratulations!
+      </h2>
+      <p class="text-sm sm:text-base font-bold text-amber-900 mb-4">
+        You collected all 6 gold stars and mastered understanding the <span class="underline decoration-amber-500 decoration-2">N0VA City Map</span>!
+      </p>
+
+      <!-- All 6 Golden Mission Boxes with Popping Gold Stars -->
+      <div id="finaleGoldStarBoxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-5">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-2.5">
+        <button
+          onclick="replayFinaleCelebration()"
+          class="game-btn py-2.5 px-4 rounded-xl bg-amber-100 hover:bg-amber-200 border-2 border-amber-400 text-amber-950 font-display font-bold text-xs sm:text-sm"
+        >
+          ✨ Pop Stars Again
+        </button>
+        <button
+          onclick="resetAllMissionsAndReplay()"
+          class="game-btn py-2.5 px-5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-display font-bold text-xs sm:text-sm shadow-lg"
+        >
+          🔄 Play Again from Stage 1
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. CURRICULUM DATA — EXACT 6-STAGE TABLE (M0B0 Always Starts at Junction Bus Stop!)
+    // =========================================================================
+    const BUS_STOP_START = { x: 315, y: 520, angle: -90 };
+
+    const MISSIONS = [
+      {
+        id: 1,
+        title: "Stage 1: Clinic",
+        targetName: "Clinic",
+        partName: "repair kit",
+        partEmoji: "🧰",
+        pinCoords: { x: 192, y: 390 },
+        introPrompt: "I'm at the Bus Stop! I need a repair kit from the Clinic. Fill in the direction line first!",
+        steps: [
+          {
+            prefix: "First,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "First, go straight.",
+            keywords: ["first", "straight"],
+            roadPath: [{ x: 315, y: 390 }],
+            targetPos: { x: 315, y: 390 },
+            targetAngle: -90
+          },
+          {
+            prefix: "Finally,",
+            correctPhrase: "the clinic is on your left",
+            choices: [
+              "the clinic is on your left",
+              "the clinic is on your right",
+              "the clinic is behind you"
+            ],
+            fullSentence: "Finally, the clinic is on your left.",
+            keywords: ["finally", "clinic", "left"],
+            roadPath: [],
+            hintPointerTo: { x: 247, y: 390 },
+            targetPos: { x: 315, y: 390 },
+            targetAngle: -90
+          }
+        ]
+      },
+      {
+        id: 2,
+        title: "Stage 2: Library",
+        targetName: "Library",
+        partName: "star map",
+        partEmoji: "🗺️",
+        pinCoords: { x: 424, y: 390 },
+        introPrompt: "I'm back at the Bus Stop! Now I need a star map from the Library. Fill in the direction line first!",
+        steps: [
+          {
+            prefix: "First,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "First, go straight.",
+            keywords: ["first", "straight"],
+            roadPath: [{ x: 315, y: 390 }],
+            targetPos: { x: 315, y: 390 },
+            targetAngle: -90
+          },
+          {
+            prefix: "Finally,",
+            correctPhrase: "the library is on your right",
+            choices: [
+              "the library is on your left",
+              "the library is on your right",
+              "the library is opposite the park"
+            ],
+            fullSentence: "Finally, the library is on your right.",
+            keywords: ["finally", "library", "right"],
+            roadPath: [],
+            hintPointerTo: { x: 356, y: 390 },
+            targetPos: { x: 315, y: 390 },
+            targetAngle: -90
+          }
+        ]
+      },
+      {
+        id: 3,
+        title: "Stage 3: Bakery",
+        targetName: "Bakery",
+        partName: "energy cookies",
+        partEmoji: "🍪",
+        pinCoords: { x: 587, y: 125 },
+        introPrompt: "Starting at the Bus Stop! Let's get energy cookies from the Bakery. Fill in the blank first!",
+        steps: [
+          {
+            prefix: "First,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "First, go straight.",
+            keywords: ["first", "straight"],
+            roadPath: [{ x: 315, y: 290 }],
+            targetPos: { x: 315, y: 290 },
+            targetAngle: -90
+          },
+          {
+            prefix: "Next,",
+            correctPhrase: "turn right",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "Next, turn right.",
+            keywords: ["next", "right"],
+            roadPath: [{ x: 585, y: 290 }],
+            targetPos: { x: 585, y: 290 },
+            targetAngle: 0
+          },
+          {
+            prefix: "Finally,",
+            correctPhrase: "the bakery is on your left",
+            choices: [
+              "the bakery is on your left",
+              "the bakery is on your right",
+              "the bakery is opposite the school"
+            ],
+            fullSentence: "Finally, the bakery is on your left.",
+            keywords: ["finally", "bakery", "left"],
+            roadPath: [],
+            hintPointerTo: { x: 585, y: 195 },
+            targetPos: { x: 585, y: 290 },
+            targetAngle: 0
+          }
+        ]
+      },
+      {
+        id: 4,
+        title: "Stage 4: School",
+        targetName: "School",
+        partName: "big battery",
+        partEmoji: "🔋",
+        pinCoords: { x: 250, y: 140 },
+        introPrompt: "Starting at the Bus Stop! I need a big battery from the School. Choose the right direction!",
+        steps: [
+          {
+            prefix: "First,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "First, go straight.",
+            keywords: ["first", "straight"],
+            roadPath: [{ x: 315, y: 290 }],
+            targetPos: { x: 315, y: 290 },
+            targetAngle: -90
+          },
+          {
+            prefix: "Next,",
+            correctPhrase: "turn left",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "Next, turn left.",
+            keywords: ["next", "left"],
+            roadPath: [{ x: 280, y: 290 }],
+            targetPos: { x: 280, y: 290 },
+            targetAngle: 180
+          },
+          {
+            prefix: "Then,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "Then, go straight.",
+            keywords: ["then", "straight"],
+            roadPath: [{ x: 215, y: 290 }],
+            targetPos: { x: 215, y: 290 },
+            targetAngle: 180
+          },
+          {
+            prefix: "Finally,",
+            correctPhrase: "the school is on your right",
+            choices: [
+              "the school is on your left",
+              "the school is on your right",
+              "the school is next to the park"
+            ],
+            fullSentence: "Finally, the school is on your right.",
+            keywords: ["finally", "school", "right"],
+            roadPath: [],
+            hintPointerTo: { x: 215, y: 244 },
+            targetPos: { x: 215, y: 290 },
+            targetAngle: 180
+          }
+        ]
+      },
+      {
+        id: 5,
+        title: "Stage 5: Market",
+        targetName: "Market",
+        partName: "bolts",
+        partEmoji: "🔩",
+        pinCoords: { x: 823, y: 148 },
+        introPrompt: "Starting at the Bus Stop! Let's collect bolts from the Market. Fill in the direction line!",
+        steps: [
+          {
+            prefix: "First,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "First, go straight.",
+            keywords: ["first", "straight"],
+            roadPath: [{ x: 315, y: 290 }],
+            targetPos: { x: 315, y: 290 },
+            targetAngle: -90
+          },
+          {
+            prefix: "Next,",
+            correctPhrase: "turn right",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "Next, turn right.",
+            keywords: ["next", "right"],
+            roadPath: [{ x: 355, y: 290 }],
+            targetPos: { x: 355, y: 290 },
+            targetAngle: 0
+          },
+          {
+            prefix: "Then,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "Then, go straight.",
+            keywords: ["then", "straight"],
+            roadPath: [{ x: 805, y: 290 }],
+            targetPos: { x: 805, y: 290 },
+            targetAngle: 0
+          },
+          {
+            prefix: "Finally,",
+            correctPhrase: "the market is on your left, next to the bakery",
+            choices: [
+              "the market is on your left, next to the bakery",
+              "the market is on your right, next to the bakery",
+              "the market is opposite the clinic"
+            ],
+            fullSentence: "Finally, the market is on your left, next to the bakery.",
+            keywords: ["finally", "market", "left"],
+            roadPath: [],
+            hintPointerTo: { x: 805, y: 252 },
+            targetPos: { x: 805, y: 290 },
+            targetAngle: 0
+          }
+        ]
+      },
+      {
+        id: 6,
+        title: "Stage 6: Tok Ali's house",
+        targetName: "Tok Ali's house",
+        partName: "new Map Chip",
+        partEmoji: "💾",
+        pinCoords: { x: 596, y: 405 },
+        introPrompt: "Final mission from the Bus Stop! Guide me to Tok Ali's house for the new Map Chip!",
+        steps: [
+          {
+            prefix: "First,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "First, go straight.",
+            keywords: ["first", "straight"],
+            roadPath: [{ x: 315, y: 290 }],
+            targetPos: { x: 315, y: 290 },
+            targetAngle: -90
+          },
+          {
+            prefix: "Next,",
+            correctPhrase: "turn right",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "Next, turn right.",
+            keywords: ["next", "right"],
+            roadPath: [{ x: 355, y: 290 }],
+            targetPos: { x: 355, y: 290 },
+            targetAngle: 0
+          },
+          {
+            prefix: "Then,",
+            correctPhrase: "go straight",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "Then, go straight.",
+            keywords: ["then", "straight"],
+            roadPath: [{ x: 695, y: 290 }],
+            targetPos: { x: 695, y: 290 },
+            targetAngle: 0
+          },
+          {
+            prefix: "After that,",
+            correctPhrase: "turn right",
+            choices: ["go straight", "turn left", "turn right"],
+            fullSentence: "After that, turn right.",
+            keywords: ["after that", "right"],
+            roadPath: [{ x: 695, y: 415 }],
+            targetPos: { x: 695, y: 415 },
+            targetAngle: 90
+          },
+          {
+            prefix: "Finally,",
+            correctPhrase: "the house is on your left, opposite the park",
+            choices: [
+              "the house is on your left, opposite the park",
+              "the house is on your right, opposite the school",
+              "the house is next to the bus stop"
+            ],
+            fullSentence: "Finally, the house is on your left, opposite the park.",
+            keywords: ["finally", "house", "left"],
+            roadPath: [],
+            hintPointerTo: { x: 650, y: 415 },
+            targetPos: { x: 695, y: 415 },
+            targetAngle: 90
+          }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    let currentMissionIdx = 0;
+    let currentStepIdx = 0;
+    let starsEarned = 0;
+    const completedMissionIds = new Set();
+
+    // M0B0 map position & orientation (always starts at Bus Stop 315, 520 facing North -90 deg)
+    let moboPos = { x: BUS_STOP_START.x, y: BUS_STOP_START.y };
+    let moboAngle = BUS_STOP_START.angle;
+
+    // Map camera rotation, zoom & drag-pan state
+    let mapRotationAngle = 0;
+    let isM0B0PovEnabled = false;
+    let mapZoomScale = 1.0;
+    let mapPanX = 0;
+    let mapPanY = 0;
+    let isPanningMap = false;
+    let panStartClientX = 0;
+    let panStartClientY = 0;
+    let panStartOriginX = 0;
+    let panStartOriginY = 0;
+    let showHelperWings = true;
+
+    // Two-step speaking & sequence gate state
+    let isBlankFilled = false;
+    let isModelSpeaking = false;
+    let isStepSpeakingComplete = false;
+    let completedStepsLog = [];
+
+    // Voice & Sound Threshold state
+    let soundThresholdDb = 65;
+    let peakSpeechDbThisAttempt = 0;
+    let isListening = false;
+    let recognition = null;
+    let audioCtx = null;
+    let micStream = null;
+    let meterAnimFrame = null;
+    let modelSpeechFallbackTimer = null;
+    let modelSpeechStartTimer = null;
+    let speechSessionCounter = 0;
+    let speechFinishDebounceTimer = null;
+
+    // =========================================================================
+    // 3. TONE.JS AUDIO EFFECTS & FEMALE MODEL VOICE ENGINE
+    // =========================================================================
+    let toneReady = false;
+
+    async function ensureToneStarted() {
+      if (toneReady || typeof Tone === "undefined") return;
+      try {
+        await Tone.start();
+        toneReady = true;
+      } catch (_) {}
+    }
+
+    async function playMoveChime() {
+      await ensureToneStarted();
+      if (typeof Tone === "undefined") return;
+      const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+      synth.volume.value = -10;
+      const now = Tone.now();
+      synth.triggerAttackRelease("C5", "16n", now);
+      synth.triggerAttackRelease("E5", "16n", now + 0.08);
+      synth.triggerAttackRelease("G5", "8n", now + 0.16);
+    }
+
+    async function playErrorBoop() {
+      await ensureToneStarted();
+      if (typeof Tone === "undefined") return;
+      const synth = new Tone.Synth({ oscillator: { type: "triangle" } }).toDestination();
+      synth.volume.value = -10;
+      const now = Tone.now();
+      synth.triggerAttackRelease("E3", "16n", now);
+      synth.triggerAttackRelease("C3", "8n", now + 0.12);
+    }
+
+    async function playVictoryFanfare() {
+      await ensureToneStarted();
+      if (typeof Tone === "undefined") return;
+      const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+      synth.volume.value = -8;
+      const now = Tone.now();
+      synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+      synth.triggerAttackRelease(["D5", "F5", "A5"], "8n", now + 0.16);
+      synth.triggerAttackRelease(["E5", "G5", "B5"], "8n", now + 0.32);
+      synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now + 0.48);
+    }
+
+    // Prioritized Female Teacher Voice ("M0B0" -> "Mobo", "N0VA" -> "Nova")
+    let cachedFemaleVoice = null;
+
+    function initFemaleBrowserVoice() {
+      if (!("speechSynthesis" in window)) return;
+      const pickFemaleVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices.length) return;
+        const femaleKeywords = [
+          "Microsoft Aria",
+          "Microsoft Jenny",
+          "Google UK English Female",
+          "Samantha",
+          "Victoria",
+          "Microsoft Zira",
+          "Karen",
+          "Moira",
+          "Tessa",
+          "Google US English",
+          "Female"
+        ];
+        for (const kw of femaleKeywords) {
+          const found = voices.find((v) => v.name.includes(kw));
+          if (found) {
+            cachedFemaleVoice = found;
+            return;
+          }
+        }
+        cachedFemaleVoice = voices.find((v) => v.lang.startsWith("en")) || voices[0];
+      };
+      pickFemaleVoice();
+      window.speechSynthesis.onvoiceschanged = pickFemaleVoice;
+    }
+
+    function normalizeForSpeech(rawText) {
+      return rawText
+        .replace(/M0B0/gi, "Mobo")
+        .replace(/N0VA/gi, "Nova")
+        .replace(/R0B0/gi, "Robo");
+    }
+
+    function speakText(text, onFinishedCallback = null) {
+      speechSessionCounter++;
+      const currentSession = speechSessionCounter;
+
+      if (modelSpeechFallbackTimer) {
+        clearTimeout(modelSpeechFallbackTimer);
+        modelSpeechFallbackTimer = null;
+      }
+      if (modelSpeechStartTimer) {
+        clearTimeout(modelSpeechStartTimer);
+        modelSpeechStartTimer = null;
+      }
+
+      let callbackFired = false;
+      const finishOnce = () => {
+        if (callbackFired || currentSession !== speechSessionCounter) return;
+        callbackFired = true;
+        if (modelSpeechFallbackTimer) {
+          clearTimeout(modelSpeechFallbackTimer);
+          modelSpeechFallbackTimer = null;
+        }
+        if (modelSpeechStartTimer) {
+          clearTimeout(modelSpeechStartTimer);
+          modelSpeechStartTimer = null;
+        }
+        if (onFinishedCallback) onFinishedCallback();
+      };
+
+      if (!("speechSynthesis" in window)) {
+        setTimeout(finishOnce, 600);
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
+
+      const cleanSpoken = normalizeForSpeech(text);
+      // Guaranteed fallback timer so the voice button ALWAYS unlocks cleanly
+      const estimatedMs = Math.max(1300, Math.min(2500, cleanSpoken.length * 65 + 450));
+      modelSpeechFallbackTimer = setTimeout(finishOnce, estimatedMs);
+
+      // Small 60ms delay after cancel() prevents Chromium speechSynthesis drop bug
+      modelSpeechStartTimer = setTimeout(() => {
+        if (callbackFired || currentSession !== speechSessionCounter) return;
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          const utterance = new SpeechSynthesisUtterance(cleanSpoken);
+          // Prevent Chromium garbage collection before onend fires
+          window.__activeMoboUtterance = utterance;
+          if (cachedFemaleVoice) utterance.voice = cachedFemaleVoice;
+          utterance.rate = 0.94;
+          utterance.pitch = 1.08;
+
+          utterance.onend = finishOnce;
+          utterance.onerror = finishOnce;
+
+          window.speechSynthesis.speak(utterance);
+        } catch (_) {
+          finishOnce();
+        }
+      }, 60);
+    }
+
+    function speakMissionPrompt() {
+      const mission = MISSIONS[currentMissionIdx];
+      if (!mission) return;
+      const labelEl = document.getElementById("listenPromptLabel");
+      if (labelEl) labelEl.textContent = "Speaking...";
+      speakText(mission.introPrompt, () => {
+        if (labelEl) labelEl.textContent = "Listen";
+      });
+    }
+
+    function readFullSequenceLog() {
+      if (!completedStepsLog.length) return;
+      const fullParagraph = completedStepsLog.map((entry) => entry.fullSentence).join(" ");
+      speakText(fullParagraph);
+    }
+
+    // =========================================================================
+    // 4. MAP CAMERA ZOOM, PAN & ROTATION CONTROLS
+    // =========================================================================
+    function applyZoomAndPanTransform(instant = false) {
+      const zoomGroup = document.getElementById("mapZoomGroup");
+      if (zoomGroup) {
+        if (instant) {
+          zoomGroup.classList.add("is-dragging");
+        }
+        const tx = 500 * (1 - mapZoomScale) + mapPanX;
+        const ty = 310 * (1 - mapZoomScale) + mapPanY;
+        zoomGroup.setAttribute("transform", `translate(${tx.toFixed(1)}, ${ty.toFixed(1)}) scale(${mapZoomScale.toFixed(2)})`);
+        if (instant && !isPanningMap) {
+          requestAnimationFrame(() => zoomGroup.classList.remove("is-dragging"));
+        }
+      }
+
+      const zoomLevelBtn = document.getElementById("zoomLevelBtn");
+      const zoomOutBtn = document.getElementById("zoomOutBtn");
+      const zoomInBtn = document.getElementById("zoomInBtn");
+      if (zoomLevelBtn) zoomLevelBtn.textContent = `${Math.round(mapZoomScale * 100)}%`;
+      if (zoomOutBtn) zoomOutBtn.disabled = mapZoomScale <= 1.0;
+      if (zoomInBtn) zoomInBtn.disabled = mapZoomScale >= 2.5;
+    }
+
+    function centerCameraOnM0B0(instant = false) {
+      if (mapZoomScale <= 1.0 && !isM0B0PovEnabled) {
+        mapPanX = 0;
+        mapPanY = 0;
+        applyZoomAndPanTransform(instant);
+        return;
+      }
+
+      const rad = (mapRotationAngle * Math.PI) / 180;
+      const dx = moboPos.x - 500;
+      const dy = moboPos.y - 310;
+      const rotX = 500 + dx * Math.cos(rad) - dy * Math.sin(rad);
+      const rotY = 310 + dx * Math.sin(rad) + dy * Math.cos(rad);
+
+      // In M0B0 POV mode, frame M0B0 slightly below center so pupils see more road ahead
+      const targetScreenY = isM0B0PovEnabled ? 350 : 310;
+      mapPanX = (500 - rotX) * mapZoomScale;
+      mapPanY = targetScreenY - 310 + (310 - rotY) * mapZoomScale;
+      applyZoomAndPanTransform(instant);
+    }
+
+    function changeMapZoom(delta) {
+      const nextScale = Math.max(1.0, Math.min(2.5, Number((mapZoomScale + delta).toFixed(2))));
+      if (nextScale === mapZoomScale) return;
+      mapZoomScale = nextScale;
+      if (mapZoomScale <= 1.0 && !isM0B0PovEnabled) {
+        mapPanX = 0;
+        mapPanY = 0;
+        applyZoomAndPanTransform();
+      } else {
+        centerCameraOnM0B0();
+      }
+    }
+
+    function resetMapZoom() {
+      mapZoomScale = 1.0;
+      if (isM0B0PovEnabled) {
+        centerCameraOnM0B0();
+      } else {
+        mapPanX = 0;
+        mapPanY = 0;
+        applyZoomAndPanTransform();
+      }
+    }
+
+    function setupMapPanAndWheel() {
+      const viewport = document.getElementById("mapViewportContainer");
+      const svg = document.getElementById("novaCitySvg");
+      if (!viewport || !svg) return;
+
+      viewport.addEventListener(
+        "wheel",
+        (e) => {
+          e.preventDefault();
+          const delta = e.deltaY < 0 ? 0.25 : -0.25;
+          changeMapZoom(delta);
+        },
+        { passive: false }
+      );
+
+      const getSvgScaleFactor = () => {
+        const rect = svg.getBoundingClientRect();
+        if (!rect.width || !rect.height) return { sx: 1, sy: 1 };
+        return {
+          sx: 1000 / rect.width,
+          sy: 620 / rect.height
+        };
+      };
+
+      const startPan = (clientX, clientY) => {
+        if (mapZoomScale <= 1.0) return;
+        isPanningMap = true;
+        panStartClientX = clientX;
+        panStartClientY = clientY;
+        panStartOriginX = mapPanX;
+        panStartOriginY = mapPanY;
+        const zoomGroup = document.getElementById("mapZoomGroup");
+        if (zoomGroup) zoomGroup.classList.add("is-dragging");
+      };
+
+      const movePan = (clientX, clientY) => {
+        if (!isPanningMap) return;
+        const { sx, sy } = getSvgScaleFactor();
+        const dx = (clientX - panStartClientX) * sx;
+        const dy = (clientY - panStartClientY) * sy;
+        const maxPanX = 480 * (mapZoomScale - 1);
+        const maxPanY = 300 * (mapZoomScale - 1);
+        mapPanX = Math.max(-maxPanX, Math.min(maxPanX, panStartOriginX + dx));
+        mapPanY = Math.max(-maxPanY, Math.min(maxPanY, panStartOriginY + dy));
+        applyZoomAndPanTransform(true);
+      };
+
+      const endPan = () => {
+        if (!isPanningMap) return;
+        isPanningMap = false;
+        const zoomGroup = document.getElementById("mapZoomGroup");
+        if (zoomGroup) zoomGroup.classList.remove("is-dragging");
+      };
+
+      viewport.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        startPan(e.clientX, e.clientY);
+      });
+      window.addEventListener("mousemove", (e) => movePan(e.clientX, e.clientY));
+      window.addEventListener("mouseup", endPan);
+
+      viewport.addEventListener(
+        "touchstart",
+        (e) => {
+          if (e.touches.length === 1) {
+            startPan(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        },
+        { passive: true }
+      );
+      viewport.addEventListener(
+        "touchmove",
+        (e) => {
+          if (isPanningMap && e.touches.length === 1) {
+            e.preventDefault();
+            movePan(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        },
+        { passive: false }
+      );
+      viewport.addEventListener("touchend", endPan);
+    }
+
+    function applyMapRotation(instant = false) {
+      const worldGroup = document.getElementById("mapWorldGroup");
+      if (worldGroup) {
+        if (instant) {
+          worldGroup.classList.add("is-animating");
+        }
+        worldGroup.setAttribute("transform", `rotate(${mapRotationAngle} 500 310)`);
+        if (instant) {
+          requestAnimationFrame(() => worldGroup.classList.remove("is-animating"));
+        }
+      }
+
+      document.querySelectorAll(".upright-label").forEach((el) => {
+        const cx = el.getAttribute("data-cx");
+        const cy = el.getAttribute("data-cy");
+        el.setAttribute("transform", `rotate(${-mapRotationAngle} ${cx} ${cy})`);
+      });
+
+      const bodyGroup = document.getElementById("m0b0BodyGroup");
+      if (bodyGroup) {
+        bodyGroup.setAttribute("transform", `rotate(${-mapRotationAngle})`);
+      }
+
+      const angleBtn = document.getElementById("mapAngleBtn");
+      if (angleBtn) {
+        const normalized = ((mapRotationAngle % 360) + 360) % 360;
+        angleBtn.textContent = `${normalized}°`;
+      }
+
+      if (mapZoomScale > 1.0 || isM0B0PovEnabled) {
+        centerCameraOnM0B0(instant);
+      }
+    }
+
+    function rotateMapBy(deltaDeg) {
+      isM0B0PovEnabled = false;
+      updatePovButtonUI();
+      mapRotationAngle += deltaDeg;
+      applyMapRotation();
+    }
+
+    function resetMapRotation() {
+      isM0B0PovEnabled = false;
+      updatePovButtonUI();
+      mapRotationAngle = 0;
+      applyMapRotation();
+    }
+
+    function toggleM0B0Pov() {
+      isM0B0PovEnabled = !isM0B0PovEnabled;
+      updatePovButtonUI();
+      if (isM0B0PovEnabled) {
+        mapRotationAngle = -90 - moboAngle;
+        if (mapZoomScale < 1.75) {
+          mapZoomScale = 1.75;
+        }
+        applyMapRotation();
+        centerCameraOnM0B0();
+      } else {
+        mapRotationAngle = 0;
+        mapZoomScale = 1.0;
+        mapPanX = 0;
+        mapPanY = 0;
+        applyMapRotation();
+        applyZoomAndPanTransform();
+      }
+    }
+
+    function updatePovButtonUI() {
+      const btn = document.getElementById("povToggleBtn");
+      const status = document.getElementById("povStatusText");
+      if (status) status.textContent = isM0B0PovEnabled ? "ON" : "OFF";
+      if (btn) {
+        btn.className = isM0B0PovEnabled
+          ? "px-2 py-1 rounded-lg text-[11px] font-bold bg-cyan-500 text-slate-950 border border-cyan-300 shadow transition flex items-center gap-1"
+          : "px-2 py-1 rounded-lg text-[11px] font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 transition flex items-center gap-1";
+      }
+    }
+
+    function toggleHelperWings() {
+      showHelperWings = !showHelperWings;
+      const wings = document.getElementById("m0b0HelperWings");
+      const status = document.getElementById("wingsStatusText");
+      if (wings) wings.style.display = showHelperWings ? "block" : "none";
+      if (status) {
+        status.textContent = showHelperWings ? "ON" : "OFF";
+        status.className = showHelperWings ? "text-emerald-400" : "text-slate-400";
+      }
+    }
+
+    // =========================================================================
+    // 5. M0B0 MOVEMENT & ROAD POLYLINE ENGINE
+    // =========================================================================
+    function updateM0B0SpriteInstant(x, y, angle) {
+      moboPos = { x, y };
+      moboAngle = angle;
+      const sprite = document.getElementById("m0b0MapSprite");
+      const cone = document.getElementById("m0b0DirectionCone");
+      if (sprite) sprite.setAttribute("transform", `translate(${x}, ${y})`);
+      if (cone) cone.setAttribute("transform", `rotate(${angle})`);
+
+      if (isM0B0PovEnabled) {
+        mapRotationAngle = -90 - angle;
+        applyMapRotation();
+        centerCameraOnM0B0();
+      } else if (mapZoomScale > 1.0) {
+        centerCameraOnM0B0();
+      }
+    }
+
+    function animateM0B0To(targetX, targetY, targetAngle, onComplete) {
+      const startX = moboPos.x;
+      const startY = moboPos.y;
+      const startAngle = moboAngle;
+      const startMapRot = mapRotationAngle;
+
+      let diffAngle = ((targetAngle - startAngle + 540) % 360) - 180;
+      const endAngle = startAngle + diffAngle;
+      const endMapRot = isM0B0PovEnabled ? -90 - endAngle : startMapRot;
+
+      const duration = 560;
+      const startTime = performance.now();
+
+      const sprite = document.getElementById("m0b0MapSprite");
+      const cone = document.getElementById("m0b0DirectionCone");
+
+      function stepFrame(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        const currX = startX + (targetX - startX) * ease;
+        const currY = startY + (targetY - startY) * ease;
+        const currAngle = startAngle + (endAngle - startAngle) * ease;
+
+        moboPos = { x: currX, y: currY };
+        sprite.setAttribute("transform", `translate(${currX.toFixed(1)}, ${currY.toFixed(1)})`);
+        cone.setAttribute("transform", `rotate(${currAngle.toFixed(1)})`);
+
+        if (isM0B0PovEnabled) {
+          mapRotationAngle = startMapRot + (endMapRot - startMapRot) * ease;
+          applyMapRotation(true);
+          centerCameraOnM0B0(true);
+        } else if (mapZoomScale > 1.0) {
+          centerCameraOnM0B0(true);
+        }
+
+        if (t < 1) {
+          requestAnimationFrame(stepFrame);
+        } else {
+          moboPos = { x: targetX, y: targetY };
+          moboAngle = ((targetAngle % 360) + 360) % 360;
+          if (isM0B0PovEnabled) {
+            mapRotationAngle = -90 - moboAngle;
+            applyMapRotation(true);
+            centerCameraOnM0B0(true);
+          }
+          if (onComplete) onComplete();
+        }
+      }
+
+      requestAnimationFrame(stepFrame);
+    }
+
+    function animateM0B0AlongRoad(waypoints, finalAngle, onComplete) {
+      if (!waypoints || waypoints.length === 0) {
+        animateM0B0To(moboPos.x, moboPos.y, finalAngle, onComplete);
+        return;
+      }
+
+      let idx = 0;
+      function driveNextSegment() {
+        if (idx >= waypoints.length) {
+          if (onComplete) onComplete();
+          return;
+        }
+        const pt = waypoints[idx];
+        const isLast = idx === waypoints.length - 1;
+        const dx = pt.x - moboPos.x;
+        const dy = pt.y - moboPos.y;
+        const segAngle =
+          Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5
+            ? (Math.atan2(dy, dx) * 180) / Math.PI
+            : finalAngle;
+
+        idx++;
+        animateM0B0To(pt.x, pt.y, isLast ? finalAngle : segAngle, driveNextSegment);
+      }
+
+      driveNextSegment();
+    }
+
+    function getRemainingMissionPolylinePoints(startPt, mission, fromStepIdx) {
+      if (!mission || !mission.steps || fromStepIdx >= mission.steps.length) {
+        return "";
+      }
+      const pts = [startPt];
+      for (let i = fromStepIdx; i < mission.steps.length; i++) {
+        const s = mission.steps[i];
+        if (s.roadPath && s.roadPath.length > 0) {
+          pts.push(...s.roadPath);
+        }
+        if (s.hintPointerTo) {
+          pts.push(s.hintPointerTo);
+        }
+      }
+      return pts.length > 1 ? pts.map((p) => `${p.x},${p.y}`).join(" ") : "";
+    }
+
+    // =========================================================================
+    // 6. SOUND THRESHOLD METER & MICROPHONE VOICE RECOGNITION
+    // =========================================================================
+    function adjustSoundThreshold(delta) {
+      soundThresholdDb = Math.max(40, Math.min(80, soundThresholdDb + delta));
+      updateSoundThresholdUI();
+    }
+
+    function updateSoundThresholdUI() {
+      const label = document.getElementById("thresholdValueLabel");
+      const greenZone = document.getElementById("greenThresholdZone");
+      if (label) label.textContent = `${soundThresholdDb} dBA`;
+      if (greenZone) {
+        const pct = Math.max(5, Math.min(92, ((soundThresholdDb - 30) / 55) * 100));
+        greenZone.style.left = `${pct.toFixed(1)}%`;
+      }
+    }
+
+    async function startLiveDecibelMeter() {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true }
+        });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaStreamSource(micStream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const meterFill = document.getElementById("voiceMeterFill");
+        const dbaBadge = document.getElementById("dbaReadoutBadge");
+
+        function updateMeter() {
+          if (!isListening) return;
+          analyser.getByteTimeDomainData(dataArray);
+          let sumSquares = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const normalized = (dataArray[i] - 128) / 128;
+            sumSquares += normalized * normalized;
+          }
+          const rms = Math.sqrt(sumSquares / dataArray.length);
+          const db = Math.max(30, Math.min(95, Math.round(20 * Math.log10(rms + 1e-5) + 92)));
+
+          if (db > peakSpeechDbThisAttempt) {
+            peakSpeechDbThisAttempt = db;
+          }
+
+          const fillPct = Math.max(0, Math.min(100, ((db - 30) / 55) * 100));
+          if (meterFill) {
+            meterFill.style.width = `${fillPct}%`;
+            if (db >= soundThresholdDb) {
+              meterFill.className =
+                "relative z-0 h-full bg-gradient-to-r from-emerald-400 to-green-300 transition-all duration-75 rounded-full";
+            } else {
+              meterFill.className =
+                "relative z-0 h-full bg-gradient-to-r from-cyan-400 to-blue-400 transition-all duration-75 rounded-full";
+            }
+          }
+
+          if (dbaBadge) {
+            dbaBadge.textContent = `${db} dBA`;
+            dbaBadge.className =
+              db >= soundThresholdDb
+                ? "px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/50 font-mono text-[10px] font-bold text-emerald-300"
+                : "px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] font-bold text-slate-300";
+          }
+
+          meterAnimFrame = requestAnimationFrame(updateMeter);
+        }
+
+        meterAnimFrame = requestAnimationFrame(updateMeter);
+      } catch (_) {
+        peakSpeechDbThisAttempt = soundThresholdDb;
+      }
+    }
+
+    function stopLiveDecibelMeter() {
+      if (meterAnimFrame) {
+        cancelAnimationFrame(meterAnimFrame);
+        meterAnimFrame = null;
+      }
+      if (micStream) {
+        micStream.getTracks().forEach((track) => track.stop());
+        micStream = null;
+      }
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
+      }
+      const meterFill = document.getElementById("voiceMeterFill");
+      const dbaBadge = document.getElementById("dbaReadoutBadge");
+      if (meterFill) meterFill.style.width = "0%";
+      if (dbaBadge) {
+        dbaBadge.textContent = "-- dBA";
+        dbaBadge.className =
+          "px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] font-bold text-slate-300";
+      }
+    }
+
+    function hasRequiredKeywords(spokenText, requiredKeywords) {
+      const normalized = spokenText.toLowerCase().replace(/[.,!?']/g, " ");
+      const synonyms = {
+        first: ["first", "1st"],
+        right: ["right", "write", "wright", "ride"],
+        straight: ["straight", "strait", "street"],
+        then: ["then", "than"],
+        clinic: ["clinic", "clinics"],
+        library: ["library", "libraries"],
+        bakery: ["bakery", "bakeries", "baker", "star bakery"],
+        school: ["school", "schools"],
+        market: ["market", "markets", "supermarket", "mega mart", "megamart"],
+        house: ["house", "houses", "home", "tok ali"]
+      };
+
+      return requiredKeywords.every((kw) => {
+        const lowerKw = kw.toLowerCase();
+        const acceptedForms = synonyms[lowerKw] || [lowerKw];
+        return acceptedForms.some((form) => normalized.includes(form));
+      });
+    }
+
+    function resetVoiceRecognitionState() {
+      if (speechFinishDebounceTimer) {
+        clearTimeout(speechFinishDebounceTimer);
+        speechFinishDebounceTimer = null;
+      }
+      if (recognition) {
+        try {
+          recognition.onresult = null;
+          recognition.onspeechend = null;
+          recognition.onerror = null;
+          recognition.onend = null;
+          recognition.abort();
+        } catch (_) {}
+        recognition = null;
+      }
+      isListening = false;
+      const micBtn = document.getElementById("speakMicBtn");
+      const visualizer = document.getElementById("speechVisualizerBox");
+      if (micBtn) micBtn.classList.remove("mic-listening");
+      if (visualizer) visualizer.classList.add("hidden");
+      stopLiveDecibelMeter();
+    }
+
+    function startVoiceRecognition() {
+      if (!isBlankFilled || isModelSpeaking || isStepSpeakingComplete) return;
+
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const micBtn = document.getElementById("speakMicBtn");
+      const micLabel = document.getElementById("micBtnLabel");
+      const visualizer = document.getElementById("speechVisualizerBox");
+      const transcriptEl = document.getElementById("liveTranscriptText");
+      const banner = document.getElementById("actionFeedbackBanner");
+
+      if (!SpeechRec) {
+        banner.className =
+          "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-amber-100 text-amber-900 border border-amber-300";
+        banner.textContent = "Speech recognition unavailable here — completing step automatically!";
+        banner.classList.remove("hidden");
+        setTimeout(() => completeSpokenStepAndMoveM0B0(), 700);
+        return;
+      }
+
+      if (isListening && recognition) {
+        if (speechFinishDebounceTimer) {
+          clearTimeout(speechFinishDebounceTimer);
+          speechFinishDebounceTimer = null;
+        }
+        try {
+          recognition.stop();
+        } catch (_) {
+          resetVoiceRecognitionState();
+        }
+        return;
+      }
+
+      resetVoiceRecognitionState();
+      if ("speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (_) {}
+      }
+
+      peakSpeechDbThisAttempt = 0;
+      isListening = true;
+      micBtn.classList.add("mic-listening");
+      micLabel.textContent = "🎙️ Speak Full Sentence (Tap when done)";
+      visualizer.classList.remove("hidden");
+      transcriptEl.textContent = "Listening — speak your full sentence...";
+      banner.classList.add("hidden");
+
+      startLiveDecibelMeter();
+
+      const activeRec = new SpeechRec();
+      recognition = activeRec;
+      activeRec.lang = "en-US";
+      activeRec.continuous = true;
+      activeRec.interimResults = true;
+      activeRec.maxAlternatives = 3;
+
+      let matchedSentence = false;
+
+      const scheduleEndAfterSilence = (delayMs) => {
+        if (speechFinishDebounceTimer) clearTimeout(speechFinishDebounceTimer);
+        speechFinishDebounceTimer = setTimeout(() => {
+          if (isListening && recognition === activeRec) {
+            try {
+              activeRec.stop();
+            } catch (_) {}
+          }
+        }, delayMs);
+      };
+
+      activeRec.onresult = (event) => {
+        if (recognition !== activeRec) return;
+        let combinedTranscript = "";
+        for (let i = 0; i < event.results.length; i++) {
+          combinedTranscript += event.results[i][0].transcript + " ";
+        }
+        const cleanHeard = combinedTranscript.trim();
+
+        const mission = MISSIONS[currentMissionIdx];
+        const step = mission.steps[currentStepIdx];
+
+        const allKeywordsHeard = hasRequiredKeywords(cleanHeard, step.keywords);
+        if (allKeywordsHeard) {
+          matchedSentence = true;
+          transcriptEl.textContent = `✅ "${cleanHeard}" — finish speaking...`;
+          micLabel.textContent = "🎙️ Keep speaking... (Finishing soon)";
+        } else {
+          transcriptEl.textContent = `"${cleanHeard}"`;
+        }
+
+        scheduleEndAfterSilence(1300);
+      };
+
+      activeRec.onspeechend = () => {
+        if (recognition === activeRec) {
+          scheduleEndAfterSilence(650);
+        }
+      };
+
+      activeRec.onerror = (event) => {
+        if (recognition !== activeRec) return;
+        if (event.error === "no-speech") {
+          banner.className =
+            "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-amber-100 text-amber-900 border border-amber-300";
+          banner.textContent = "I didn't hear you! Tap the button and speak clearly.";
+          banner.classList.remove("hidden");
+        } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          banner.className =
+            "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-rose-100 text-rose-900 border border-rose-300";
+          banner.textContent = "Microphone permission blocked by browser. Allow mic access and try again.";
+          banner.classList.remove("hidden");
+        } else if (event.error !== "aborted") {
+          banner.className =
+            "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-amber-100 text-amber-900 border border-amber-300";
+          banner.textContent = "Mic reset — tap the voice button again and speak clearly!";
+          banner.classList.remove("hidden");
+        }
+      };
+
+      activeRec.onend = () => {
+        if (recognition !== activeRec) return;
+        recognition = null;
+        if (speechFinishDebounceTimer) {
+          clearTimeout(speechFinishDebounceTimer);
+          speechFinishDebounceTimer = null;
+        }
+        isListening = false;
+        micBtn.classList.remove("mic-listening");
+        visualizer.classList.add("hidden");
+        stopLiveDecibelMeter();
+
+        if (matchedSentence) {
+          if (peakSpeechDbThisAttempt > 0 && peakSpeechDbThisAttempt < soundThresholdDb) {
+            playErrorBoop();
+            setM0B0Expression("confused");
+            micLabel.textContent = "🎤 Speak Louder (65+ dBA) — Tap & Speak";
+            banner.className =
+              "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-amber-100 text-amber-900 border border-amber-300";
+            banner.textContent = `Good words, but too quiet (${peakSpeechDbThisAttempt} dBA < ${soundThresholdDb} dBA)! Reach the green bar!`;
+            banner.classList.remove("hidden");
+            return;
+          }
+          completeSpokenStepAndMoveM0B0();
+        } else {
+          micLabel.textContent = "🎤 Tap & Speak Full Sentence";
+          if (banner.classList.contains("hidden")) {
+            const step = MISSIONS[currentMissionIdx].steps[currentStepIdx];
+            const kwHint = step.keywords.map((k) => `"${k}"`).join(" + ");
+            banner.className =
+              "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-amber-100 text-amber-900 border border-amber-300";
+            banner.textContent = `Include the key words (${kwHint}), e.g. "${step.fullSentence}"`;
+            banner.classList.remove("hidden");
+          }
+        }
+      };
+
+      try {
+        activeRec.start();
+      } catch (_) {
+        resetVoiceRecognitionState();
+        micLabel.textContent = "🎤 Tap & Speak Full Sentence";
+      }
+    }
+
+    // =========================================================================
+    // 7. TWO-STEP MISSION FLOW (FILL BLANK -> MODEL VOICE -> SPEAK TO MOVE)
+    // =========================================================================
+    function setM0B0Expression(mood) {
+      const happy = document.getElementById("faceHappy");
+      const confused = document.getElementById("faceConfused");
+      const celebrate = document.getElementById("faceCelebrate");
+      const portrait = document.getElementById("m0b0PortraitContainer");
+
+      if (happy) happy.classList.toggle("hidden", mood !== "happy");
+      if (confused) confused.classList.toggle("hidden", mood !== "confused");
+      if (celebrate) celebrate.classList.toggle("hidden", mood !== "celebrate");
+
+      if (portrait) {
+        portrait.classList.remove("animate-shake", "animate-happy");
+        void portrait.offsetWidth;
+        if (mood === "confused") portrait.classList.add("animate-shake");
+        if (mood === "celebrate") portrait.classList.add("animate-happy");
+      }
+    }
+
+    function loadMission(missionIndex) {
+      resetVoiceRecognitionState();
+      document.getElementById("celebrationModal").classList.add("hidden");
+      currentMissionIdx = missionIndex;
+      currentStepIdx = 0;
+      isBlankFilled = false;
+      isModelSpeaking = false;
+      isStepSpeakingComplete = false;
+      completedStepsLog = [];
+
+      const mission = MISSIONS[currentMissionIdx];
+
+      document.getElementById("missionBadge").textContent = `STAGE ${mission.id}/${MISSIONS.length}`;
+      document.getElementById("mapTargetLabel").textContent = mission.targetName;
+      document.getElementById("missionTitle").textContent = mission.title;
+      document.getElementById("partGoalChip").textContent = `${mission.partEmoji} Part: ${mission.partName}`;
+      document.getElementById("m0b0SpeechText").textContent = `"${mission.introPrompt}"`;
+
+      const pin = document.getElementById("destinationPinGroup");
+      if (pin && mission.pinCoords) {
+        pin.setAttribute("transform", `translate(${mission.pinCoords.x}, ${mission.pinCoords.y})`);
+      }
+
+      updateM0B0SpriteInstant(BUS_STOP_START.x, BUS_STOP_START.y, BUS_STOP_START.angle);
+
+      const completedLine = document.getElementById("completedRouteLine");
+      if (completedLine) {
+        completedLine.setAttribute("points", `${BUS_STOP_START.x},${BUS_STOP_START.y}`);
+      }
+
+      const hintLine = document.getElementById("nextStepHintLine");
+      if (hintLine) {
+        const fullRoutePoints = getRemainingMissionPolylinePoints(BUS_STOP_START, mission, 0);
+        if (fullRoutePoints) {
+          hintLine.setAttribute("points", fullRoutePoints);
+          hintLine.style.display = "block";
+        } else {
+          hintLine.style.display = "none";
+        }
+      }
+
+      setM0B0Expression("happy");
+      renderHeaderMissionBoxes();
+      renderCurrentStepUI();
+      renderFullDirectionLog();
+    }
+
+    function renderCurrentStepUI() {
+      resetVoiceRecognitionState();
+      const mission = MISSIONS[currentMissionIdx];
+      const step = mission.steps[currentStepIdx];
+
+      isBlankFilled = false;
+      isModelSpeaking = false;
+      isStepSpeakingComplete = false;
+
+      document.getElementById("step1Badge").textContent = `Line ${currentStepIdx + 1} of ${mission.steps.length}`;
+      document.getElementById("sequenceTemplateText").innerHTML =
+        `${step.prefix} <span class="inline-block px-3 py-0.5 rounded-lg bg-amber-100 text-amber-800 border-b-2 border-dashed border-amber-500">____________</span>.`;
+
+      step.choices.forEach((choiceText, idx) => {
+        const btn = document.getElementById(`choice-btn-${idx}`);
+        if (!btn) return;
+        btn.disabled = false;
+        btn.textContent = choiceText;
+        btn.className =
+          "game-btn py-2 px-1.5 rounded-xl border-2 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 font-display font-bold text-[11px] lg:text-xs leading-tight text-center shadow-sm";
+      });
+
+      const voiceCard = document.getElementById("voiceStepCard");
+      const voiceBadge = document.getElementById("voicePhaseBadge");
+      const replayBtn = document.getElementById("replayModelVoiceBtn");
+      const replayLabel = document.getElementById("replayVoiceBtnLabel");
+      const micBtn = document.getElementById("speakMicBtn");
+      const micBtnLabel = document.getElementById("micBtnLabel");
+
+      if (voiceCard) {
+        voiceCard.className =
+          "shrink-0 bg-white rounded-2xl p-2 lg:p-2.5 shadow-lg border-2 border-slate-200 transition-all duration-300";
+      }
+      if (voiceBadge) {
+        voiceBadge.textContent = "🔒 Fill blank first";
+        voiceBadge.className = "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600";
+      }
+      if (replayBtn) {
+        replayBtn.disabled = true;
+      }
+      if (replayLabel) {
+        replayLabel.textContent = "Listen";
+      }
+      if (micBtn) {
+        micBtn.disabled = true;
+        micBtn.classList.remove("mic-listening");
+      }
+      if (micBtnLabel) {
+        micBtnLabel.textContent = "Complete Step 1 First";
+      }
+
+      const banner = document.getElementById("actionFeedbackBanner");
+      if (banner) {
+        banner.classList.add("hidden");
+        banner.textContent = "";
+      }
+    }
+
+    function handleBlankChoice(choiceIdx) {
+      if (isBlankFilled) return;
+
+      const mission = MISSIONS[currentMissionIdx];
+      const step = mission.steps[currentStepIdx];
+      const chosenText = step.choices[choiceIdx];
+      const clickedBtn = document.getElementById(`choice-btn-${choiceIdx}`);
+      const banner = document.getElementById("actionFeedbackBanner");
+
+      if (chosenText !== step.correctPhrase) {
+        playErrorBoop();
+        setM0B0Expression("confused");
+        if (clickedBtn) {
+          clickedBtn.classList.remove("animate-shake");
+          void clickedBtn.offsetWidth;
+          clickedBtn.classList.add("animate-shake", "border-rose-400", "bg-rose-50", "text-rose-800");
+          setTimeout(() => {
+            clickedBtn.classList.remove("border-rose-400", "bg-rose-50", "text-rose-800");
+          }, 850);
+        }
+        if (banner) {
+          banner.className =
+            "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-rose-100 text-rose-900 border border-rose-300";
+          banner.textContent = `Not quite! Check M0B0's yellow arrow and LEFT/RIGHT wings on the map.`;
+          banner.classList.remove("hidden");
+        }
+        return;
+      }
+
+      // Correct choice! Fill the sequence line blank
+      isBlankFilled = true;
+      isModelSpeaking = true;
+      setM0B0Expression("happy");
+
+      document.getElementById("sequenceTemplateText").innerHTML =
+        `${step.prefix} <span class="inline-block px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-900 border-b-2 border-emerald-500 underline">${step.correctPhrase}</span>.`;
+
+      step.choices.forEach((_, idx) => {
+        const btn = document.getElementById(`choice-btn-${idx}`);
+        if (!btn) return;
+        btn.disabled = true;
+        if (idx === choiceIdx) {
+          btn.className =
+            "py-2 px-1.5 rounded-xl border-2 border-emerald-500 bg-emerald-100 text-emerald-950 font-display font-bold text-[11px] lg:text-xs leading-tight text-center shadow-sm";
+        } else {
+          btn.className =
+            "py-2 px-1.5 rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-400 font-display font-bold text-[11px] lg:text-xs leading-tight text-center opacity-60";
+        }
+      });
+
+      const voiceCard = document.getElementById("voiceStepCard");
+      const voiceBadge = document.getElementById("voicePhaseBadge");
+      const replayBtn = document.getElementById("replayModelVoiceBtn");
+      const replayLabel = document.getElementById("replayVoiceBtnLabel");
+      const micBtn = document.getElementById("speakMicBtn");
+      const micBtnLabel = document.getElementById("micBtnLabel");
+
+      if (voiceCard) {
+        voiceCard.className =
+          "shrink-0 bg-white rounded-2xl p-2 lg:p-2.5 shadow-lg border-2 border-sky-400 transition-all duration-300";
+      }
+      if (voiceBadge) {
+        voiceBadge.textContent = "🔊 Listen to model voice...";
+        voiceBadge.className =
+          "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 animate-pulse";
+      }
+      if (replayBtn) {
+        replayBtn.disabled = true;
+      }
+      if (replayLabel) {
+        replayLabel.textContent = "Speaking...";
+      }
+      if (micBtn) {
+        micBtn.disabled = true;
+      }
+      if (micBtnLabel) {
+        micBtnLabel.textContent = "🔊 Model Voice Speaking First...";
+      }
+
+      banner.className =
+        "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-sky-100 text-sky-900 border border-sky-300";
+      banner.textContent = `🔊 Listen carefully first: "${step.fullSentence}"`;
+      banner.classList.remove("hidden");
+
+      // Speak the completed sentence aloud FIRST, then unlock the Listen Again & Voice Buttons
+      speakText(step.fullSentence, () => {
+        isModelSpeaking = false;
+        if (voiceCard) {
+          voiceCard.className =
+            "shrink-0 bg-white rounded-2xl p-2 lg:p-2.5 shadow-lg border-2 border-cyan-400 transition-all duration-300";
+        }
+        if (voiceBadge) {
+          voiceBadge.textContent = "🎤 Your Turn to Speak!";
+          voiceBadge.className =
+            "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800";
+        }
+        if (replayBtn) {
+          replayBtn.disabled = false;
+        }
+        if (replayLabel) {
+          replayLabel.textContent = "Listen";
+        }
+        if (micBtn) {
+          micBtn.disabled = false;
+        }
+        if (micBtnLabel) {
+          micBtnLabel.textContent = "🎤 Tap & Speak Full Sentence";
+        }
+        banner.className =
+          "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-cyan-50 text-cyan-900 border border-cyan-300";
+        banner.textContent = `Now tap the voice button and say: "${step.fullSentence}"`;
+      });
+    }
+
+    function replayCurrentStepSentence() {
+      if (!isBlankFilled || isModelSpeaking) return;
+
+      // Stop active microphone capture cleanly so speaker audio does not trigger mic
+      resetVoiceRecognitionState();
+
+      const mission = MISSIONS[currentMissionIdx];
+      const step = mission.steps[currentStepIdx];
+      const voiceBadge = document.getElementById("voicePhaseBadge");
+      const replayBtn = document.getElementById("replayModelVoiceBtn");
+      const replayLabel = document.getElementById("replayVoiceBtnLabel");
+      const micBtn = document.getElementById("speakMicBtn");
+      const micBtnLabel = document.getElementById("micBtnLabel");
+      const banner = document.getElementById("actionFeedbackBanner");
+
+      isModelSpeaking = true;
+      if (replayBtn) replayBtn.disabled = true;
+      if (replayLabel) replayLabel.textContent = "Speaking...";
+      if (micBtn) micBtn.disabled = true;
+      if (!isStepSpeakingComplete) {
+        if (voiceBadge) {
+          voiceBadge.textContent = "🔊 Listening again...";
+          voiceBadge.className =
+            "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 animate-pulse";
+        }
+        if (micBtnLabel) micBtnLabel.textContent = "🔊 Listening Again...";
+      }
+
+      if (banner) {
+        banner.className =
+          "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-sky-100 text-sky-900 border border-sky-300";
+        banner.textContent = `🔊 Listening again: "${step.fullSentence}"`;
+        banner.classList.remove("hidden");
+      }
+
+      speakText(step.fullSentence, () => {
+        isModelSpeaking = false;
+        if (replayBtn) replayBtn.disabled = false;
+        if (replayLabel) replayLabel.textContent = "Listen";
+
+        if (!isStepSpeakingComplete) {
+          if (voiceBadge) {
+            voiceBadge.textContent = "🎤 Your Turn to Speak!";
+            voiceBadge.className =
+              "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800";
+          }
+          if (micBtn) micBtn.disabled = false;
+          if (micBtnLabel) micBtnLabel.textContent = "🎤 Tap & Speak Full Sentence";
+          if (banner) {
+            banner.className =
+              "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-cyan-50 text-cyan-900 border border-cyan-300";
+            banner.textContent = `Now tap the voice button and say: "${step.fullSentence}"`;
+          }
+        }
+      });
+    }
+
+    function completeSpokenStepAndMoveM0B0() {
+      if (isStepSpeakingComplete) return;
+      isStepSpeakingComplete = true;
+
+      const mission = MISSIONS[currentMissionIdx];
+      const step = mission.steps[currentStepIdx];
+      const staysOnSpot = !step.roadPath || step.roadPath.length === 0;
+
+      playMoveChime();
+      setM0B0Expression("celebrate");
+
+      // Record completed sentence in Full Direction Log
+      completedStepsLog.push({
+        stepNumber: currentStepIdx + 1,
+        fullSentence: step.fullSentence
+      });
+      renderFullDirectionLog();
+
+      // Update Step 2 UI
+      const micBtn = document.getElementById("speakMicBtn");
+      const micBtnLabel = document.getElementById("micBtnLabel");
+      const voiceBadge = document.getElementById("voicePhaseBadge");
+      const banner = document.getElementById("actionFeedbackBanner");
+
+      if (micBtn) micBtn.disabled = true;
+      if (micBtnLabel) {
+        micBtnLabel.textContent = staysOnSpot
+          ? "✅ Great Speaking! M0B0 Found It!"
+          : "✅ Great Speaking! Moving M0B0...";
+      }
+      if (voiceBadge) {
+        voiceBadge.textContent = "✅ Spoken!";
+        voiceBadge.className = "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800";
+      }
+
+      banner.className =
+        "mt-1.5 py-1 px-2.5 rounded-xl text-[11px] font-bold text-center leading-tight bg-emerald-100 text-emerald-900 border border-emerald-300";
+      banner.textContent = staysOnSpot
+        ? `✅ Awesome! M0B0 stays on the spot: "${step.fullSentence}"`
+        : `✅ Awesome! M0B0 is moving: "${step.fullSentence}"`;
+      banner.classList.remove("hidden");
+
+      // Append road-aligned waypoints to solid cyan trail if moving
+      const completedLine = document.getElementById("completedRouteLine");
+      if (completedLine && !staysOnSpot) {
+        const existingPoints = completedLine.getAttribute("points") || "";
+        const segPoints = step.roadPath.map((p) => `${p.x},${p.y}`).join(" ");
+        completedLine.setAttribute("points", `${existingPoints} ${segPoints}`.trim());
+      }
+
+      // Animate M0B0 along road corners (or keep on the spot if staysOnSpot is true)
+      animateM0B0AlongRoad(step.roadPath || [], step.targetAngle, () => {
+        const hintLine = document.getElementById("nextStepHintLine");
+        if (currentStepIdx + 1 < mission.steps.length) {
+          currentStepIdx++;
+          if (hintLine) {
+            const ptsStr = getRemainingMissionPolylinePoints(moboPos, mission, currentStepIdx);
+            if (!ptsStr) {
+              hintLine.style.display = "none";
+            } else {
+              hintLine.style.display = "block";
+              hintLine.setAttribute("points", ptsStr);
+            }
+          }
+          setM0B0Expression("happy");
+          renderCurrentStepUI();
+        } else {
+          // Stage Complete!
+          if (hintLine) hintLine.style.display = "none";
+          handleStageCelebration();
+        }
+      });
+    }
+
+    function renderFullDirectionLog() {
+      const mission = MISSIONS[currentMissionIdx];
+      const listEl = document.getElementById("routeSequenceLogList");
+      const badgeEl = document.getElementById("logProgressBadge");
+      const readAllBtn = document.getElementById("readAllLogBtn");
+
+      if (badgeEl) {
+        badgeEl.textContent = `${completedStepsLog.length}/${mission.steps.length}`;
+      }
+      if (readAllBtn) {
+        readAllBtn.disabled = completedStepsLog.length === 0;
+      }
+      if (!listEl) return;
+
+      if (completedStepsLog.length === 0) {
+        listEl.innerHTML = `
+          <div class="h-full flex items-center justify-center text-center text-[11px] text-slate-400 font-medium px-2">
+            Fill in each direction line and speak the full sentence aloud to move M0B0 and record it here!
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = completedStepsLog
+        .map(
+          (entry) => `
+          <div class="flex items-start gap-2 bg-emerald-50/90 border border-emerald-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+            <span class="w-5 h-5 rounded-full bg-emerald-600 text-white font-display font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+              ${entry.stepNumber}
+            </span>
+            <p class="text-xs font-bold text-slate-800 leading-snug">
+              ${entry.fullSentence}
+            </p>
+          </div>
+        `
+        )
+        .join("");
+
+      listEl.scrollTop = listEl.scrollHeight;
+    }
+
+    // =========================================================================
+    // 8. STAGE CELEBRATION, GOLDEN BOXES & GRAND FINALE POP-OUT
+    // =========================================================================
+    function renderHeaderMissionBoxes() {
+      const container = document.getElementById("headerMissionBoxes");
+      if (!container) return;
+
+      container.innerHTML = MISSIONS.map((m, idx) => {
+        const isGolden = completedMissionIds.has(m.id);
+        const isCurrent = idx === currentMissionIdx;
+
+        if (isGolden) {
+          return `
+            <button
+              onclick="selectMissionFromModal(${idx})"
+              title="${m.title} — Completed! (Golden Box)"
+              class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-300 via-yellow-300 to-amber-500 border border-amber-200 shadow-sm shadow-amber-500/40 flex flex-col items-center justify-center leading-none transition-transform hover:scale-110"
+            >
+              <span class="text-[11px]">⭐</span>
+              <span class="text-[8px] font-black text-amber-950">${m.id}</span>
+            </button>
+          `;
+        }
+
+        return `
+          <button
+            onclick="selectMissionFromModal(${idx})"
+            title="${m.title}${isCurrent ? " (Current)" : ""}"
+            class="w-7 h-7 rounded-lg ${
+              isCurrent
+                ? "bg-cyan-500/30 border border-cyan-300 text-cyan-200"
+                : "bg-slate-800/90 border border-slate-600 text-slate-400 hover:border-slate-400"
+            } flex flex-col items-center justify-center leading-none transition-transform hover:scale-105"
+          >
+            <span class="text-[9px] opacity-75">☆</span>
+            <span class="text-[8px] font-bold">${m.id}</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function spawnGoldStarPopBurst() {
+      const burstLayer = document.getElementById("goldStarBurstLayer");
+      if (!burstLayer) return;
+      burstLayer.innerHTML = "";
+
+      const totalStars = 28;
+      for (let i = 0; i < totalStars; i++) {
+        const star = document.createElement("div");
+        star.className = "burst-gold-star select-none drop-shadow-lg";
+        const angle = (Math.PI * 2 * i) / totalStars + (Math.random() - 0.5) * 0.3;
+        const distance = 140 + Math.random() * 340;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+        const rot = Math.round((Math.random() - 0.5) * 360);
+        const sizePx = 22 + Math.round(Math.random() * 24);
+        const delayMs = Math.round(Math.random() * 280);
+
+        star.style.setProperty("--tx", `${tx.toFixed(0)}px`);
+        star.style.setProperty("--ty", `${ty.toFixed(0)}px`);
+        star.style.setProperty("--rot", `${rot}deg`);
+        star.style.fontSize = `${sizePx}px`;
+        star.style.animationDelay = `${delayMs}ms`;
+        star.textContent = i % 4 === 0 ? "🌟" : "⭐";
+
+        burstLayer.appendChild(star);
+      }
+
+      setTimeout(() => {
+        if (burstLayer) burstLayer.innerHTML = "";
+      }, 2300);
+    }
+
+    function showAllGoldStarsFinale() {
+      document.getElementById("celebrationModal").classList.add("hidden");
+      const boxesContainer = document.getElementById("finaleGoldStarBoxes");
+
+      if (boxesContainer) {
+        boxesContainer.innerHTML = MISSIONS.map(
+          (m, idx) => `
+          <div
+            style="animation-delay: ${idx * 110}ms"
+            class="star-pop-out p-3 rounded-2xl bg-gradient-to-br from-amber-200 via-yellow-100 to-amber-300 border-2 border-amber-500 shadow-md flex flex-col items-center justify-center gap-1"
+          >
+            <div class="text-3xl drop-shadow">⭐</div>
+            <div class="font-display font-bold text-xs text-amber-950 leading-tight">${m.title}</div>
+            <div class="text-[11px] font-bold text-amber-800">${m.partEmoji} ${m.partName}</div>
+          </div>
+        `
+        ).join("");
+      }
+
+      spawnGoldStarPopBurst();
+      playVictoryFanfare();
+      document.getElementById("allStarsFinaleModal").classList.remove("hidden");
+      speakText(
+        "Congratulations! You collected all six gold stars! You did an amazing job understanding the Nova City Map!"
+      );
+    }
+
+    function replayFinaleCelebration() {
+      spawnGoldStarPopBurst();
+      playVictoryFanfare();
+      speakText(
+        "Congratulations! You collected all six gold stars and mastered understanding the Nova City Map!"
+      );
+    }
+
+    function resetAllMissionsAndReplay() {
+      document.getElementById("allStarsFinaleModal").classList.add("hidden");
+      completedMissionIds.clear();
+      starsEarned = 0;
+      document.getElementById("starCountDisplay").textContent = "0";
+      loadMission(0);
+      speakMissionPrompt();
+    }
+
+    function handleStageCelebration() {
+      const mission = MISSIONS[currentMissionIdx];
+      playVictoryFanfare();
+
+      if (!completedMissionIds.has(mission.id)) {
+        completedMissionIds.add(mission.id);
+        starsEarned++;
+        document.getElementById("starCountDisplay").textContent = starsEarned;
+      }
+
+      renderHeaderMissionBoxes();
+
+      // If all 6 missions are now finished, pop out all gold stars & congratulate on understanding N0VA City Map!
+      if (completedMissionIds.size === MISSIONS.length) {
+        setTimeout(() => {
+          showAllGoldStarsFinale();
+        }, 750);
+        return;
+      }
+
+      document.getElementById("celebEmoji").textContent = mission.partEmoji;
+      document.getElementById("celebTitle").textContent = `You Found the ${mission.partName}!`;
+      document.getElementById("celebMessage").textContent =
+        `Stage ${mission.id} box is now GOLDEN with a ⭐! (${completedMissionIds.size}/${MISSIONS.length} Gold Stars)`;
+
+      const nextBtn = document.getElementById("nextMissionBtn");
+      // Point to the next uncompleted mission if available, otherwise next in sequence
+      let nextUncompletedIdx = MISSIONS.findIndex((m) => !completedMissionIds.has(m.id));
+      if (nextUncompletedIdx === -1) {
+        nextUncompletedIdx = (currentMissionIdx + 1) % MISSIONS.length;
+      }
+      nextBtn.textContent = `Next: ${MISSIONS[nextUncompletedIdx].title} ➡️`;
+
+      document.getElementById("celebrationModal").classList.remove("hidden");
+      speakText(
+        `Congratulations! You found the ${mission.partName} at the ${mission.targetName}, and earned a gold star!`
+      );
+    }
+
+    function goToNextMission() {
+      document.getElementById("celebrationModal").classList.add("hidden");
+      const nextUncompletedIdx = MISSIONS.findIndex((m) => !completedMissionIds.has(m.id));
+      const nextIdx = nextUncompletedIdx !== -1 ? nextUncompletedIdx : (currentMissionIdx + 1) % MISSIONS.length;
+      loadMission(nextIdx);
+      speakMissionPrompt();
+    }
+
+    function openMissionModal() {
+      const grid = document.getElementById("missionGrid");
+      grid.innerHTML = MISSIONS.map((m, idx) => {
+        const isDone = completedMissionIds.has(m.id);
+        const isCurrent = idx === currentMissionIdx;
+        return `
+          <button
+            onclick="selectMissionFromModal(${idx})"
+            class="game-btn text-left p-3.5 rounded-2xl border-2 ${
+              isDone
+                ? "border-amber-400 bg-gradient-to-br from-amber-100 via-yellow-50 to-amber-200 shadow-md ring-2 ring-amber-300/60"
+                : isCurrent
+                ? "border-cyan-500 bg-cyan-50"
+                : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+            } flex items-center justify-between gap-3"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="text-3xl shrink-0">${m.partEmoji}</span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-display font-bold ${isDone ? "text-amber-950" : "text-slate-900"} text-sm truncate">${m.title}</span>
+                  ${
+                    isDone
+                      ? '<span class="px-1.5 py-0.5 rounded bg-amber-400/40 text-amber-950 text-[9px] font-black uppercase">Golden</span>'
+                      : ""
+                  }
+                </div>
+                <div class="text-xs font-semibold ${isDone ? "text-amber-800" : "text-slate-600"} truncate">Part: ${m.partName}</div>
+              </div>
+            </div>
+            <span class="text-2xl shrink-0 ${isDone ? "drop-shadow" : ""}">${isDone ? "⭐" : isCurrent ? "▶️" : "🗺️"}</span>
+          </button>
+        `;
+      }).join("");
+
+      document.getElementById("missionModal").classList.remove("hidden");
+    }
+
+    function closeMissionModal() {
+      document.getElementById("missionModal").classList.add("hidden");
+    }
+
+    function selectMissionFromModal(idx) {
+      closeMissionModal();
+      loadMission(idx);
+      speakMissionPrompt();
+    }
+
+    // =========================================================================
+    // 9. INITIALIZE ON WINDOW LOAD
+    // =========================================================================
+    window.addEventListener("load", () => {
+      initFemaleBrowserVoice();
+      setupMapPanAndWheel();
+      updateSoundThresholdUI();
+      loadMission(0);
+    });
+  </script>
+</body>
+</html>
